@@ -127,3 +127,11 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# added ishikawa
+.classpath
+.project
+.settings/
+target/
+*.iml
+.idea/
