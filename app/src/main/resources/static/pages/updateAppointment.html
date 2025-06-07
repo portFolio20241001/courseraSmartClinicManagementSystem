@@ -1,0 +1,84 @@
+<!-- updateAppointment.html -->
+
+<!-- 
+Step-by-Step Explanation of the Update Appointment Page
+This HTML file provides an interface for doctors to update patient appointments, including time and date selection, with pre-filled patient and doctor information.
+
+1. Declare the Document Type
+
+   * Use `<!DOCTYPE html>` to ensure HTML5 standards for consistent rendering.
+
+2. Begin the HTML Document with Language Attribute
+
+   * Set `<html lang="en">` to specify English content.
+
+3. Head Section – Metadata and Linked Resources
+
+   * Begin the `<head>` section to include all meta, styles, and script references.
+
+4. Set Character Encoding
+
+   * Use `<meta charset="UTF-8">` to support universal character encoding.
+
+5. Set the Favicon
+
+   * Use a favicon for tab display:
+     ```html
+     <link rel="icon" type="image/svg+xml" href="../assets/images/logo/logo.png" />
+     ```
+
+6. Set the Page Title
+
+   * Title the document appropriately with:
+     ```html
+     <title>DoctorDashboard</title>
+     ```
+
+7. Link CSS Stylesheets
+
+   * Include multiple stylesheets for UI consistency:
+     - `adminDashboard.css` – for general dashboard layout.
+     - `doctorDashboard.css` – for doctor-specific elements.
+     - `updateAppointment.css` – for styles specific to the update form.
+     - `style.css` – shared global styles.
+
+8. Include JavaScript Files (Deferred)
+
+   * Load JavaScript files using `defer` to prevent blocking:
+     - `render.js` – for dynamic content rendering.
+     - `util.js` – common utility functions.
+     - `header.js` and `footer.js` – inject consistent header/footer sections.
+     - `updateAppointment.js` – handles form submission logic and time population.
+
+9. Body Initialization
+
+   * Use `<body onload="renderContent()">` to trigger dynamic rendering on load.
+
+10. Create the Container Layout
+
+   * Structure the layout with `container` and `wrapper` divs for controlled spacing and responsiveness.
+
+11. Add Dynamic Header
+
+   * Use `<div id="header"></div>` to insert a shared header via JavaScript.
+
+12. Define the Main Content Area
+
+   * Inside `<div class="main-content">`, include a styled form for appointment updating.
+
+13. Add the Form Elements
+
+   * The form includes:
+     - Disabled inputs for patient and doctor names (pre-filled).
+     - Editable fields for date and time.
+     - A dropdown (`select`) for appointment time options (to be filled dynamically).
+     - Submit and Cancel buttons for update actions.
+
+14. Add Footer Section
+
+   * Use `<div id="footer"></div>` for dynamic footer injection.
+
+15. Close All Tags Properly
+
+   * Ensure all elements are properly closed to maintain clean and valid HTML structure.
+ -->

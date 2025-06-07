@@ -1,0 +1,83 @@
+/* This is the stylesheet for the addPrescription.html  
+
+Form Container (`.form container`)
+
+1. Set the width to 100% to make the form responsive.
+2. Set the maximum width to 600px (or adjust it as needed based on screen size).
+3. Use a semi transparent white background (` ffffffc8`) to make the form look soft.
+4. Center the form horizontally using `margin: 50px auto`.
+5. Add 30px padding inside the form for inner spacing.
+6. Round the corners with a 15px border radius  .
+7. Apply a subtle box shadow to elevate the form (`0 4px 12px rgba(0, 0, 0, 0.1)`).
+8. Animate the form on load with a fade in effect lasting `0.5s`.
+
+Form Heading (`.container h2`)
+
+1. Align the heading text to the center  .
+2. Set the text color to 222 (dark grey).
+3. Use a font size of 28px for the heading.
+4. Add a bottom margin of 25px to create spacing below it.
+
+Highlighted Text in Heading (`.container h2 span`)
+
+1. Change the span text color inside the heading to A62B1F (a bold red shade).
+
+Label Styling (`label`)
+
+1. Display labels as block elements  .
+2. Add a bottom margin of 6px to separate them from inputs.
+3. Use medium font weight (500).
+4. Set the text color to  333.
+5. Align text to the left and set font size to 13px.
+
+Input and Textarea Styling (`input, textarea`)  
+
+1. Set width to 100% for full alignment.
+2. Add 12px padding for comfortable typing space.
+3. Allow vertical resizing of textareas.
+4. Add a bottom margin of 20px between fields.
+5. Use a light grey border with partial transparency.
+6. Round corners with an 8px border radius  .
+7. Set font size to 15px and font family to `"Verdana"`.
+8. Remove default browser outlines and add a 0.3s transition for smooth interactions.
+
+Focus Effects (`input:focus, textarea:focus`)  
+
+1. Highlight focused fields with a custom border color (` 015c5d`).
+2. Add a soft green glow effect using box shadow (` a7f3d0`).
+3. Slightly increase brightness when the field is focused.
+
+Special Styling for Name Input (`patientName`)  
+
+1. Give the input a distinct light grey background (`#bdbcbc80`) to differentiate it.
+
+Primary Button (`.btn primary`)  
+
+1. Use a green background (`#047857`) with white text  .
+2. Add 14px padding and set width to 100%  .
+3. Remove border and round corners with 8px border radius  .
+4. Set font size to 16px  .
+5. Add pointer cursor and smooth 0.3s transition  .
+6. On hover, darken the button to #065f46  .
+
+Secondary Button (`.btn secondary`)  
+
+1. Make the background transparent with grey text  .
+2. Add a 1px solid border with light grey color.
+3. Set padding to 12px, width to 100%, and font size to 15px  .
+4. Round corners with 8px border radius  .
+5. Add top margin of 12px to separate from other elements.
+6. On hover, change text color to white  .
+
+Fade In Animation (`@keyframes fadeIn`)  
+
+1. Initially set the element to:
+
+      - opacity: 0  
+      - translateY: 30px (slide it down slightly)
+
+2. Animate it to:
+
+      - opacity: 1  
+      - translateY: 0 (move it to the original position)
+ */

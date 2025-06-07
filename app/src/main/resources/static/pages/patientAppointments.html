@@ -1,0 +1,99 @@
+<!-- patientAppointment.html -->
+
+<!-- 
+Step-by-Step Explanation of the Patient Appointments Page
+This HTML file provides a structured interface for displaying and managing patient appointments, complete with filtering, searching, and dynamic content loading.
+
+1. Declare the Document Type
+
+   * Use `<!DOCTYPE html>` to ensure HTML5 compliance for consistent rendering.
+
+2. Begin the HTML Document with Language Attribute
+
+   * Use `<html lang="en">` to specify English as the primary language.
+
+3. Head Section – Metadata and Linked Assets
+
+   * Begin the `<head>` block with essential meta tags, linked CSS stylesheets, and JavaScript scripts.
+
+4. Set Character Encoding
+
+   * Use `<meta charset="UTF-8">` to support all text characters and symbols.
+
+5. Set the Favicon
+
+   * Display the site’s logo in the browser tab using:
+     ```html
+     <link rel="icon" type="image/svg+xml" href="../assets/images/logo/logo.png" />
+     ```
+
+6. Set the Page Title
+
+   * Use `<title>Patient Appointments</title>` to show the name of the page in the browser tab.
+
+7. Link CSS Stylesheets
+
+   * Add three stylesheets to style the layout and components:
+     - `adminDashboard.css` – base layout styling
+     - `doctorDashboard.css` – reused styles (likely for table structure, buttons)
+     - `style.css` – shared global UI styles
+
+8. Include JavaScript Files (Deferred)
+
+   * Load supporting and modular JavaScript files with `defer`:
+     - `render.js` – handles dynamic HTML rendering
+     - `util.js` – utility functions
+     - `header.js` and `footer.js` – dynamically insert common header/footer
+     - `patientAppointment.js` – controls appointment filtering and table population
+
+9. Close Head and Begin the Body
+
+   * Use `<body onload="renderContent()">` to invoke content rendering when the page is fully loaded.
+
+10. Create the Container and Wrapper
+
+   * Use a `container` and `wrapper` div to structure and constrain the content layout.
+
+11. Insert Header Placeholder
+
+   * Include `<div id="header"></div>` for dynamic header rendering via JavaScript.
+
+12. Define the Main Content Area
+
+   * Use `<div class="main-content">` to wrap the core appointment display section.
+
+13. Add a Page Heading
+
+   * Insert a styled heading using `<h2>` and `<span>` for visual emphasis:
+     ```html
+     <h2>Patient <span>Appointment</span></h2>
+     ```
+
+14. Add a Search Bar
+
+   * Include a search input for filtering the appointments dynamically:
+     ```html
+     <input type="text" id="searchBar" class="searchBar" placeholder="Search Bar for custom output" />
+     ```
+
+15. Add Appointment Filter Dropdown
+
+   * Add a dropdown to allow filtering between:
+     - All appointments
+     - Future appointments
+     - Past appointments
+
+16. Create the Appointment Table
+
+   * Use a table to display the appointment data:
+     - Columns: Patient Name, Doctor Name, Date, Time, Actions
+     - The body (`#patientTableBody`) will be populated dynamically via JavaScript.
+
+17. Insert Footer Placeholder
+
+   * Add `<div id="footer"></div>` for the dynamically loaded footer content.
+
+18. Close All Tags
+
+   * Properly close all open elements to maintain valid and clean HTML.
+ -->

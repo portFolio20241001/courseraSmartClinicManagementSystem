@@ -1,0 +1,79 @@
+<!-- patientRecord.html -->
+
+<!-- 
+Step-by-Step Explanation of the Doctor Patient Record Page
+This HTML document allows doctors to view detailed records of their patients, including appointment information and prescriptions, with dynamic content rendering.
+
+1. Declare the Document Type
+
+   * Use `<!DOCTYPE html>` to ensure the browser interprets the page using HTML5 standards.
+
+2. Begin the HTML Document with Language Attribute
+
+   * Use `<html lang="en">` to specify that the page content is in English.
+
+3. Head Section – Metadata and Asset Linking
+
+   * The `<head>` section includes all critical metadata and external resource links (styles and scripts).
+
+4. Set Character Encoding
+
+   * Include `<meta charset="UTF-8">` to ensure text content is correctly rendered across browsers.
+
+5. Set the Favicon
+
+   * Add a favicon to the browser tab using:
+     ```html
+     <link rel="icon" type="image/svg+xml" href="../assets/images/logo/logo.png" />
+     ```
+
+6. Set the Page Title
+
+   * Set a descriptive tab title using `<title>DoctorDashboard</title>`.
+
+7. Link CSS Stylesheets
+
+   * Include stylesheets for consistent UI:
+     - `adminDashboard.css` – for basic dashboard layout and grid.
+     - `doctorDashboard.css` – doctor-specific visual tweaks.
+     - `style.css` – shared global styling across the application.
+
+8. Include JavaScript Files (Deferred)
+
+   * Load all necessary scripts with `defer` to ensure they execute only after the HTML is fully parsed:
+     - `render.js` – populates shared content dynamically.
+     - `util.js` – reusable JavaScript helper functions.
+     - `header.js` and `footer.js` – dynamically inject header and footer.
+     - `patientRecordRow.js` – logic for rendering each patient record row.
+     - `patientRecordServices.js` – manages data fetching and interaction logic for patient records.
+
+9. Body Initialization
+
+   * Use `<body onload="renderContent()">` to initialize the page by rendering dynamic components once the page is fully loaded.
+
+10. Create the Container Structure
+
+   * Use nested `<div class="container">` and `<div class="wrapper">` for layout control and styling consistency.
+
+11. Insert Dynamic Header
+
+   * Use `<div id="header"></div>` as a placeholder to be populated by `header.js`.
+
+12. Define Main Content Area
+
+   * The main section includes:
+     - A heading: `<h2>Patient <span>Record</span></h2>` for clear page identification.
+     - A data table with headers: Date, Appointment ID, Patient ID, Prescription.
+
+13. Add Table Body for Dynamic Content
+
+   * Use `<tbody id="patientTableBody"></tbody>` to dynamically populate patient record rows via JavaScript modules.
+
+14. Insert Dynamic Footer
+
+   * Add `<div id="footer"></div>` to load common footer content from `footer.js`.
+
+15. Close All Tags Properly
+
+   * Ensure all HTML tags are correctly closed to maintain a valid and accessible structure.
+ -->

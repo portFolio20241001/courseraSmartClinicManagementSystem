@@ -1,0 +1,343 @@
+/* This is the style sheet for global change across the files. */
+
+/* 
+
+`.header`
+
+* `display: flex;` → Uses flexbox to layout children (logo section and nav) in a row.
+* `justify-content: space-between;` → Places space between logo and nav; pushes them to the far ends.
+* `align-items: center;` → Vertically centers items inside the header.
+* `background-color: #f4f4f4;` → Light gray background for visual clarity.
+* `color: #333;` → Sets default text color (dark gray).
+* `padding: 10px 20px;` → Adds space inside the header (10px top-bottom, 20px left-right).
+* `border-bottom: 2px solid #ccc;` → Adds a subtle bottom border to separate header from content.
+* `flex-wrap: wrap;` → Allows wrapping if screen is narrow (for responsiveness).
+* `min-height: 60px;` → Ensures the header doesn’t collapse too small vertically.
+
+`.logo-section`
+
+* `display: flex;` → Lays out logo image and title in a row.
+* `align-items: center;` → Vertically aligns logo and text.
+* `gap: 10px;` → Adds space between logo image and title.
+
+`.logo-img`
+
+* `height: 40px;` → Sets image height.
+* `width: auto;` → Maintains aspect ratio.
+* `max-width: 100%;` → Prevents overflow in small containers.
+* `object-fit: contain;` → Makes sure the image scales down properly without distortion.
+
+`.logo-title`
+
+* `font-size: 20px;` → Sets font size of the title.
+* `font-weight: bold;` → Makes it bold.
+* `color: #333;` → Sets color to dark gray.
+
+`nav a`
+
+* `margin-left: 20px;` → Adds space on the left of links.
+* `margin-right: 20px;` → Adds space on the right of links.
+* `text-decoration: none;` → Removes underline.
+* `color: #333;` → Sets text color.
+* `font-weight: bold;` → Makes text bold.
+
+`nav a:hover`
+
+* `color: #003e3e;` → Changes color to dark teal when hovered.
+
+`@media (max-width: 600px)`
+
+Targeting small screens.
+
+`.header`
+
+* `flex-direction: column;` → Stack logo and nav vertically.
+* `align-items: flex-start;` → Aligns them to left edge.
+
+`nav`
+
+* `margin-top: 10px;` → Adds spacing above nav.
+
+`nav a`
+
+* `margin-left: 0;` → Removes left margin.
+* `margin-right: 10px;` → Smaller right margin.
+
+`.logo-img`
+
+* `height: 30px;` → Smaller image for mobile.
+
+`.logo-title`
+
+* `font-size: 18px;` → Smaller title font for mobile.
+
+`.doctorHeader`
+
+* `margin-right: 30px;` → Pushes this element right.
+
+`.doctorHeader:hover`
+
+* `color: #A62B1F;` → Changes to dark red on hover.
+
+`.footer`
+
+* `background-color: #f4f4f4;` → Light gray background.
+* `color: #fff;` → White text color.
+* `padding: 40px 20px;` → Adds space inside footer.
+* `border-top: 2px solid #f4f4f4;` → Light top border.
+
+`.footer-container`
+
+* `display: flex;` → Flex layout for footer sections.
+* `flex-wrap: wrap;` → Allows wrapping for small screens.
+* `justify-content: space-between;` → Distributes child elements.
+* `gap: 30px;` → Space between footer sections.
+* `max-width: 1200px;` → Constrains footer width.
+* `margin: 0 auto;` → Centers the footer horizontally.
+
+`.footer-logo`
+
+* `flex: 1 1 250px;` → Flexible basis 250px, allows growth/shrink.
+* `display: flex;` → Column layout.
+* `flex-direction: column;` → Stack logo and text.
+* `align-items: flex-start;` → Aligns content to the left.
+* `gap: 15px;` → Space between logo and text.
+
+`.footer-logo img`
+
+* `height: 50px;` → Sets image height.
+* `width: auto;` → Maintains aspect ratio.
+
+`.footer-logo p`
+
+* `font-size: 14px;` → Smaller text.
+* `color: #0a0a23;` → Very dark navy text.
+
+`.footer-links`
+
+* `display: flex;` → Lays out link columns.
+* `flex: 2 1 500px;` → Flexible width, basis 500px.
+* `justify-content: space-between;` → Distributes columns evenly.
+* `flex-wrap: wrap;` → Allows wrap for small screens.
+* `gap: 20px;` → Space between columns.
+
+`.footer-column`
+
+* `display: flex;` → Vertical layout.
+* `flex-direction: column;` → Stack items.
+* `gap: 10px;` → Space between items.
+
+`.footer-column h4`
+
+* `font-size: 16px;` → Medium heading.
+* `font-weight: bold;` → Emphasized text.
+* `margin-bottom: 8px;` → Space below heading.
+* `color: #0a0a23;` → Dark navy.
+
+`.footer-column a`
+
+* `text-decoration: none;` → Removes underline.
+* `color: #0a0a23;` → Dark navy.
+* `font-size: 14px;` → Normal size.
+
+`.footer-column a:hover`
+
+* `color: #003e3e;` → Teal on hover.
+* `transition: color 0.3s ease;` → Smooth hover effect.
+
+`@media (max-width: 768px)`
+
+Mobile responsiveness.
+
+`.footer-container`
+
+* `flex-direction: column;` → Stacks sections vertically.
+* `align-items: flex-start;` → Aligns to left.
+
+`.footer-links`
+
+* `flex-direction: column;` → Stacks columns.
+* `gap: 20px;` → Spacing.
+
+`.modal`
+
+* `display: none;` → Hidden by default.
+* `position: fixed;` → Stays in place even on scroll.
+* `z-index: 999;` → Sits above most elements.
+* `padding-top: 60px;` → Push content below top.
+* `left: 0; top: 0; width: 100%; height: 100%;` → Full screen.
+* `background-color: rgba(0,0,0,0.6);` → Semi-transparent black overlay.
+
+`.modal-content`
+
+* `background-color: white;` → Modal is white box.
+* `margin: auto;` → Centered.
+* `padding: 30px;` → Inner spacing.
+* `border-radius: 10px;` → Rounded corners.
+* `width: 400px;` → Fixed width.
+* `position: relative;` → Allows positioning `.close`.
+
+`.modal-content h2`
+
+* `font-size: 32px;` → Large heading.
+
+`.close`
+
+* `color: #aaa;` → Gray close icon.
+* `position: absolute; right: 20px; top: 15px;` → Positions in top-right.
+* `font-size: 28px; font-weight: bold;` → Styling for visibility.
+* `cursor: pointer;` → Shows pointer on hover.
+
+`.close:hover`
+
+* `color: black;` → Darkens on hover.
+
+`.dashboard-btn`
+
+* `width: 100%;` → Full-width button.
+
+`.input-field`
+
+* `padding: 10px;` → Inner spacing.
+* `border: 1px solid #ccc;` → Light gray border.
+* `font-size: 16px;` → Readable font.
+* `margin-top: 10px; margin-bottom: 20px;` → Vertical spacing.
+* `width: 100%;` → Full-width.
+* `appearance: none;` → Removes OS styles.
+* `background-color: #fff; color: #333;` → Input colors.
+* `cursor: pointer;` → Pointer on hover.
+* `border-radius: 8px;` → Rounded edges.
+
+`.input-field:hover`
+
+* `border-color: #015c5d;` → Dark teal border.
+* `background-color: #f0fdfd;` → Light teal background.
+
+`.input-field:focus`
+
+* `outline: none;` → Removes default border.
+* `border-color: #015c5d;` → Teal border.
+* `box-shadow: 0 0 5px rgba(1, 92, 93, 0.5);` → Glowing focus.
+* `filter: brightness(1.2);` → Slightly brightens field.
+
+`.select-dropdown option`
+
+* `font-size: 16px;` → Text size for options.
+* `padding: 10px;` → Spacing in dropdown.
+
+`#content`
+
+* `display: grid;` → Grid layout.
+* `grid-template-columns: repeat(auto-fit, minmax(315px, 1fr));` → Responsive card layout.
+* `gap: 40px;` → Space between cards.
+* `padding: 20px;` → Space around content.
+
+`.doctor-card`
+
+* `display: flex; flex-direction: column; justify-content: space-between;` → Vertical card layout.
+* `border: 1px solid #ddd;` → Light border.
+* `border-radius: 10px;` → Rounded corners.
+* `width: auto;` → Flexible width.
+* `overflow: hidden;` → Clips overflow.
+* `background-color: #fff;` → White card.
+* `box-shadow: 0 4px 6px rgba(0,0,0,0.1);` → Subtle shadow.
+* `transition: transform 0.2s ease;` → Smooth hover effect.
+
+`.doctor-card:hover`
+
+* `transform: scale(1.02);` → Slight zoom on hover.
+
+`.doctor-info`
+
+* `padding: 12px;` → Space inside.
+* `flex-grow: 1;` → Fills available space.
+
+`.doctor-info h3`
+
+* `margin-top: 30px;` → Space above heading.
+* `font-size: 24px;` → Big heading.
+* `color: #015c5d;` → Teal color.
+
+`.doctor-info p`
+
+* `margin: 20px 0px;` → Vertical space.
+* `font-size: 14px; color: #555;` → Subtext style.
+
+`.card-actions`
+
+* `background-color: #e28282;` → Light red button area.
+* `padding: 10px; text-align: center;` → Centered button.
+
+`.card-actions:hover`
+
+* `background-color: #d26969;` → Darker red on hover.
+
+`.card-actions button`
+
+* `background: transparent; border: none;` → No button frame.
+* `color: #fff; font-weight: bold; cursor: pointer;` → White bold text.
+
+`.card-actions button:hover`
+
+* `color: #fff; border-color: #015c5d;` → Keeps color on hover, adds border if needed.
+
+`#roleSelector`
+
+* `width: auto;` → Flexible width.
+* `border-radius: 10px;` → Rounded dropdown.
+
+`span`
+
+* `color: #A62B1F;` → Dark red text.
+
+`.searchBar`
+
+* `height: 30px; padding: 20px; font-size: 16px;` → Large input.
+* `margin-bottom: 30px; border: 0.2px solid grey;` → Bottom space, thin border.
+
+`.searchBar:focus`
+
+* `outline: none; border-color: #015c5d;` → Focus state.
+* `box-shadow: 0 0 5px rgba(1, 92, 93, 0.697);` → Teal glow.
+
+`.filter-wrapper`
+
+* `width: 350px;` → Max container width.
+* `display: flex; flex-direction: row;` → Horizontal filter layout.
+
+`.filter-select`
+
+* `margin-right: 8px;` → Space between filters.
+* `width: 100%; padding: 8px 12px;` → Full width input with padding.
+* `border: 1px solid #ccc; border-radius: 6px;` → Basic input look.
+* `background-color: #fff; color: #333;` → Light bg, dark text.
+* `font-size: 14px;` → Text size.
+* `background-position: right 10px center; background-size: 16px 16px;` → Icon placement (if any).
+* `cursor: pointer; transition: border-color 0.2s, box-shadow 0.2s;` → Smooth focus transitions.
+
+`.filter-select:focus`
+
+* `border-color: #015c5d; box-shadow: 0 0 5px rgba(1, 92, 93, 0.697); outline: none;` → Focus styling.
+
+`.availabilityLabel`
+
+* `margin-bottom: 8px;` → Space below label.
+
+`.availability-container`
+
+* `margin-bottom: 1rem;` → Adds space.
+
+`.checkbox-group`
+
+* `display: flex; flex-direction: column;` → Stacked checkboxes.
+* `gap: 1rem; margin-top: 1rem;` → Spacing.
+
+`.checkbox-group label`
+
+* `font-weight: 500; cursor: pointer;` → Medium bold and pointer.
+
+`.checkbox-group input[type="checkbox"]`
+
+* `margin-right: 0.5rem;` → Space between checkbox and label.
+* `accent-color: #015c5db8;` → Custom color for checkbox.
+ */

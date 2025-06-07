@@ -1,0 +1,165 @@
+/* This is the style sheet for the updateAppointment.html */
+/* 
+`.form-container`
+
+Purpose:
+
+To create a styled, centered container for the form with a modern card-like look and an entry animation.
+
+Properties Used:
+
+* `max-width: 600px` → Limits the maximum width.
+* `background: #ffffffc8` → White background with transparency.
+* `margin: 10px auto` → Centered horizontally, with vertical margin.
+* `padding: 30px` → Internal spacing.
+* `border-radius: 15px` → Rounded corners.
+* `box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1)` → Soft drop shadow.
+* `animation: fadeIn 0.5s ease-in-out` → Fade-in animation when loaded.
+
+`.container h2`
+
+Purpose:
+
+To style the heading of the form and make it prominent.
+
+Properties Used:
+
+* `text-align: center` → Center-aligns the heading.
+* `color: #222` → Dark gray text.
+* `font-size: 28px` → Larger text size.
+* `margin-bottom: 25px` → Spacing below the heading.
+
+`.container h2 span`
+
+Purpose:
+
+To highlight a part of the heading (usually a keyword or important word).
+
+Properties Used:
+
+* `color: #A62B1F` → Reddish color for emphasis.
+
+`label`
+
+Purpose:
+
+To style the labels above input fields for better readability and alignment.
+
+Properties Used:
+
+* `display: block` → Makes label appear on a separate line.
+* `margin-bottom: 6px` → Adds spacing below the label.
+* `font-weight: 500` → Semi-bold font weight.
+* `color: #333` → Dark gray color.
+* `text-align: left` → Aligns text to the left.
+* `font-size: 13px` → Smaller readable text.
+
+`input, textarea, select`
+
+Purpose:
+
+To uniformly style all form fields (input, textarea, select) for consistency and better UX.
+
+Properties Used:
+
+* `width: 100%` → Takes full width of container.
+* `padding: 12px` → Internal padding for comfortable input.
+* `resize: vertical` → Only textareas can resize vertically.
+* `margin-bottom: 20px` → Adds space below each field.
+* `border: 1px solid #cccccc6e` → Light, semi-transparent border.
+* `border-radius: 8px` → Slightly rounded corners.
+* `font-size: 15px` → Medium text size.
+* `outline: none` → Removes default blue border on focus.
+* `transition: 0.3s` → Smooth transition effects.
+* `font-family: "Verdana"` → Sets font to Verdana.
+
+`input:focus, textarea:focus`
+
+Purpose:
+
+To visually indicate when a user is focused on an input or textarea.
+
+Properties Used:
+
+* `border-color: #015c5d` → Dark teal border on focus.
+* `box-shadow: 0 0 4px #a7f3d0` → Greenish glow effect.
+* `filter: brightness(1.5)` → Makes the field brighter.
+
+`#patientName`
+
+Purpose:
+
+To visually distinguish the "patientName" field—usually meant to be disabled or read-only.
+
+Properties Used:
+
+* `background-color: #bdbcbc80` → Light gray background with transparency.
+
+`.btn-primary`
+
+Purpose:
+
+To style the main action button (likely "Submit" or "Update") with a bold color and good spacing.
+
+Properties Used:
+
+* `background-color: #047857` → Dark green background.
+* `color: #fff` → White text.
+* `padding: 14px` → Internal padding for a large clickable area.
+* `width: 100%` → Full-width button.
+* `border: none` → No border.
+* `border-radius: 8px` → Rounded corners.
+* `font-size: 16px` → Medium-large readable text.
+* `cursor: pointer` → Shows hand cursor on hover.
+* `transition: 0.3s` → Smooth hover transition.
+
+`.btn-primary:hover`
+
+Purpose:
+
+To visually indicate hover state for the main button.
+
+Properties Used:
+
+* `background-color: #065f46` → Slightly darker green.
+
+`.btn-secondary`
+
+Purpose:
+
+To style the secondary button (like “Cancel” or “Back”) with a more subtle look.
+
+Properties Used:
+
+* `background-color: transparent` → No background color.
+* `color: #333` → Dark gray text.
+* `border: 1px solid #ccc` → Light gray border.
+* `padding: 12px` → Spacing inside button.
+* `width: 100%` → Full-width button.
+* `border-radius: 8px` → Rounded corners.
+* `font-size: 15px` → Medium text size.
+* `margin-top: 12px` → Space above the button.
+* `cursor: pointer` → Hand cursor on hover.
+
+`.btn-secondary:hover`
+
+Purpose:
+
+To change text color on hover for secondary button.
+
+Properties Used:
+
+* `color: #fff` → White text on hover (background remains transparent unless styled elsewhere).
+
+`@keyframes fadeIn`
+
+Purpose:
+
+To define the animation for a smooth fade-in effect when the form is loaded.
+
+Properties Used:
+
+* `from { opacity: 0; transform: translateY(30px); }` → Starts invisible and pushed down.
+* `to { opacity: 1; transform: translateY(0); }` → Ends fully visible in the original position.
+
+*/

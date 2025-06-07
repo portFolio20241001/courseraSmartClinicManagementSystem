@@ -1,0 +1,98 @@
+<!-- addPrescription.html -->
+
+<!-- 
+Step-by-Step Explanation of `adminDashboard.html` (Add Prescription Page)
+This file creates a user interface for doctors to input and manage patient prescriptions, featuring a structured form layout and integrated JavaScript modules.
+
+1. Declare the Document Type
+
+   * Use `<!DOCTYPE html>` to ensure compliance with HTML5 standards.
+
+2. Open the HTML Tag with Language Attribute
+
+   * Specify the language as English using `<html lang="en">`.
+
+3. Head Section – Metadata and Resources
+
+   * Begin the `<head>` section where metadata and external assets are declared.
+
+4. Set Character Encoding
+
+   * Use `<meta charset="UTF-8">` to define UTF-8 encoding for broad character support.
+
+5. Set the Favicon
+
+   * Add a favicon for the browser tab using:
+     ```html
+     <link rel="icon" type="image/svg+xml" href="../assets/images/logo/logo.png" />
+     ```
+
+6. Set the Page Title
+
+   * Title the page `"Add Prescription"` .
+
+7. Link CSS Stylesheets
+
+   * Include all relevant stylesheets for layout and UI:
+     - `adminDashboard.css` – shared admin panel styles
+     - `doctorDashboard.css` – doctor-specific visual layout
+     - `addPrescription.css` – styles specific to the prescription form
+     - `style.css` – global styling for shared UI components
+
+8. Include JavaScript Files (with `defer`)
+
+   * Load necessary scripts using the `defer` attribute so they execute after parsing:
+     - `render.js` – handles page content rendering
+     - `util.js` – utility helpers
+     - `header.js` and `footer.js` – dynamically injects header/footer
+     - `addPrescription.js` – logic for form submission and behavior (loaded as ES6 module)
+
+9. Close the Head and Begin the Body
+
+    * Use `<body onload="renderContent()">` to trigger dynamic content loading when the page is ready.
+
+10. Create the Main Container
+
+    * Wrap the entire layout inside `<div class="container">` to structure and style the content.
+
+11. Add a Wrapper Div
+
+    * Use `<div class="wrapper">` to keep content organized inside the main container.
+
+12. Insert a Header Placeholder
+
+    * Add `<div id="header"></div>` which will be dynamically populated with the site header via JavaScript.
+
+13. Define the Main Content Area
+
+    * Use `<div class="main-content">` to house the central UI for prescription input.
+
+14. Create a Form Container
+
+    * Wrap the form in `<div class="form-container">` for layout control.
+
+15. Add the Heading
+
+    * Use an `<h2>` tag for the form title, with a styled `<span>` for emphasis:
+      ```html
+      <h2 id="heading">Add <span>Prescription</span></h2>
+      ```
+
+16. Construct the Prescription Form
+
+    * Use a `<form>` element that includes:
+      - `Patient Name` field (disabled input)
+      - `Medicine Names` field (text input)
+      - `Dosage Instructions` field (textarea)
+      - `Additional Notes` field (optional textarea)
+      - A **submit button** to save the prescription
+      - A **cancel button** to redirect or reset the form using `selectRole('doctor')`
+
+17. Insert a Footer Placeholder
+
+    * Use `<div id="footer"></div>` to dynamically render the common footer content.
+
+18. Close All Tags
+
+    * Ensure all opened tags (`div`, `form`, `body`, `html`) are properly closed to maintain valid HTML structure.
+ -->
