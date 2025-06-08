@@ -16,7 +16,7 @@ NOT NULL によって「必須入力項目」を定義し、データの整合�
 | name           | VARCHAR(100)                      | NOT NULL, LENGTH(3〜100)     | 氏名（3〜100文字）              |
 | email          | VARCHAR(100), UNIQUE              | NOT NULL, UNIQUE, VALID_EMAIL | メールアドレス（重複不可）       |
 | password       | VARCHAR(255)                      | NOT NULL, MIN_LENGTH(6)     | パスワード（6文字以上、非公開） |
-| phone          | VARCHAR(20)                       | NOT NULL, REGEXP(10桁数字)  | 電話番号（10桁の数字）          |
+| phone          | VARCHAR(10)                       | NOT NULL, REGEXP(10桁数字)  | 電話番号（10桁の数字）          |
 | address        | VARCHAR(255)                      | NOT NULL, MAX_LENGTH(255)   | 住所（最大255文字）             |
 | date_of_birth  | DATE                              | NOT NULL                    | 生年月日                         |
 | gender         | ENUM('male', 'female', 'other')   | NOT NULL                    | 性別                             |
@@ -26,16 +26,17 @@ NOT NULL によって「必須入力項目」を定義し、データの整合�
 
 ### 🩺 Table: doctors（医師情報）
 
-| カラム名             | データ型                             | 制約                          | 説明                                           |
-|----------------------|--------------------------------------|-------------------------------|------------------------------------------------|
-| id                   | BIGINT, PRIMARY KEY, AUTO_INCREMENT | NOT NULL                      | 主キー：医師ID（自動採番）                    |
-| name                 | VARCHAR(100)                         | NOT NULL                      | 医師の氏名（3〜100文字）                      |
-| specialty            | VARCHAR(50)                          | NOT NULL                      | 専門分野（3〜50文字）                         |
-| email                | VARCHAR(100), UNIQUE                 | NOT NULL, UNIQUE              | メールアドレス（有効形式、重複不可）         |
-| password             | VARCHAR(255)                         | NOT NULL                      | パスワード（6文字以上、JSON出力時は非表示）   |
-| phone                | VARCHAR(10)                          | NOT NULL                      | 電話番号（数字10桁）                          |
-| available_times      | TEXT (List 形式として保存)           | NULL許容                      | 診療可能時間帯（例："09:00-10:00"の文字列配列）|
-| created_at           | DATETIME                             | NOT NULL, DEFAULT CURRENT_TIMESTAMP | 登録日時（自動設定、更新不可）         |
+| カラム名             | データ型                             | 制約                                         | 説明                                           |
+|----------------------|--------------------------------------|----------------------------------------------|------------------------------------------------|
+| id                   | BIGINT, PRIMARY KEY, AUTO_INCREMENT | NOT NULL                                     | 主キー：医師ID（自動採番）                    |
+| clinic_id            | INT                                 | NOT NULL, FOREIGN KEY → clinic_locations(id) | 外部キー：所属クリニックID                    |
+| name                 | VARCHAR(100)                         | NOT NULL                                     | 医師の氏名（3〜100文字）                      |
+| specialty            | VARCHAR(50)                          | NOT NULL                                     | 専門分野（3〜50文字）                         |
+| email                | VARCHAR(100), UNIQUE                 | NOT NULL, UNIQUE                             | メールアドレス（有効形式、重複不可）         |
+| password             | VARCHAR(255)                         | NOT NULL                                     | パスワード（6文字以上、JSON出力時は非表示）   |
+| phone                | VARCHAR(10)                          | NOT NULL                                     | 電話番号（数字10桁）                          |
+| available_times      | TEXT（文字列配列をJSONなどで保存）   | NULL許容                                     | 診療可能時間帯（例："09:00-10:00"など）       |
+| created_at           | DATETIME DEFAULT CURRENT_TIMESTAMP   | NOT NULL                                     | 登録日時（自動設定、更新不可）                |
 
 ---
 
@@ -45,22 +46,23 @@ NOT NULL によって「必須入力項目」を定義し、データの整合�
 |-------------|-----------------------------------|------------------------|----------------------------|
 | id          | INT, PRIMARY KEY, AUTO_INCREMENT  | NOT NULL               | 主キー：所在地ID           |
 | name        | VARCHAR(100)                      | NOT NULL               | クリニック名               |
-| address     | VARCHAR(255)                     | NOT NULL               | 所在地住所                 |
-| phone       | VARCHAR(20)                      | NOT NULL               | 電話番号                   |
-| created_at  | DATETIME DEFAULT CURRENT_TIMESTAMP | NOT NULL             | 登録日時                   |
+| address     | VARCHAR(255)                      | NOT NULL               | 所在地住所                 |
+| phone       | VARCHAR(10)                       | NOT NULL               | 電話番号                   |
+| created_at  | DATETIME DEFAULT CURRENT_TIMESTAMP | NOT NULL               | 登録日時                   |
 
 ---
 
 ### 📅 Table: appointments（予約情報）
 
-| カラム名            | データ型                            | 制約                                                   | 説明                       |
-|---------------------|-----------------------------------|--------------------------------------------------------|----------------------------|
-| id                  | BIGINT, PRIMARY KEY, AUTO_INCREMENT | NOT NULL                                               | 主キー：予約ID             |
-| patient_id          | BIGINT                            | NOT NULL, FOREIGN KEY → patients(id)                   | 外部キー：患者ID           |
-| doctor_id           | BIGINT                            | NOT NULL, FOREIGN KEY → doctors(id)                    | 外部キー：医師ID           |
-| appointment_time    | DATETIME                         | NOT NULL, 未来日時制約（アプリケーション側でバリデーション） | 予約日時                   |
-| status              | INT                              | NOT NULL, 0=Scheduled, 1=Completed, 2=Cancelled（整数で管理） | 予約ステータス             |
-| notes               | TEXT                             | NULL（任意）                                           | 備考                       |
+| カラム名            | データ型                            | 制約                                                   | 説明                                     |
+|---------------------|-----------------------------------|--------------------------------------------------------|------------------------------------------|
+| id                  | BIGINT, PRIMARY KEY, AUTO_INCREMENT | NOT NULL                                               | 主キー：予約ID                           |
+| patient_id          | BIGINT                            | NOT NULL, FOREIGN KEY → patients(id)                   | 外部キー：患者ID                         |
+| doctor_id           | BIGINT                            | NOT NULL, FOREIGN KEY → doctors(id)                    | 外部キー：医師ID                         |
+| clinic_id           | INT                               | NOT NULL, FOREIGN KEY → clinic_locations(id)           | 外部キー：予約対象のクリニックID        |
+| appointment_time    | DATETIME                          | NOT NULL, アプリ側で未来日時バリデーション             | 予約日時                                 |
+| status              | INT                               | NOT NULL, 0=Scheduled, 1=Completed, 2=Cancelled         | 予約ステータス（整数で管理）            |
+| notes               | TEXT                              | NULL許容                                               | 備考                                     |
 
 ---
 
@@ -69,11 +71,10 @@ NOT NULL によって「必須入力項目」を定義し、データの整合�
 | カラム名         | データ型                            | 制約                                                   | 説明                       |
 |------------------|-----------------------------------|--------------------------------------------------------|----------------------------|
 | id               | INT, PRIMARY KEY, AUTO_INCREMENT  | NOT NULL                                               | 主キー：支払いID           |
-| patient_id       | INT                               | NOT NULL, FOREIGN KEY → patients(id)                   | 外部キー：患者ID           |
 | appointment_id   | INT                               | NOT NULL, FOREIGN KEY → appointments(id)               | 外部キー：予約ID           |
 | amount           | DECIMAL(10,2)                     | NOT NULL                                               | 支払い金額                 |
 | payment_method   | ENUM('cash', 'credit', 'insurance') | NOT NULL                                             | 支払い方法                 |
-| status           | ENUM('Paid', 'Pending', 'Failed') | NOT NULL                                               | 支払いステータス           |
+| payment_status   | ENUM('Paid', 'Pending', 'Failed') | NOT NULL                                               | 支払いステータス           |
 | paid_at          | DATETIME                         | NULL（未払いの場合NULL）                               | 支払日時（支払済のみ）     |
 | created_at       | DATETIME DEFAULT CURRENT_TIMESTAMP | NOT NULL                                             | レコード作成日時           |
 
@@ -117,16 +118,11 @@ MongoDB は、柔軟なスキーマ設計が求められるデータを格納す
 ```json
 {
   "_id": "ObjectId('64abc123456')",            // MongoDB固有のドキュメントID
-  "patientId": 101,                            // MySQLのpatients.idと紐づく数値ID
+  "patientName": "山田　太郎",                            // MySQLのpatients.idと紐づく数値ID
   "appointmentId": 51,                         // MySQLのappointments.idと紐づく数値ID
   "medication": "パラセタモール",
   "dosage": "500mg",
   "doctorNotes": "6時間おきに1錠服用してください。",
-  "refillCount": 2,
-  "pharmacy": {
-    "name": "マツモト薬局 新宿店",
-    "location": "東京都新宿区"
-  }
 }
 
 ```
@@ -137,11 +133,10 @@ MongoDB は、柔軟なスキーマ設計が求められるデータを格納す
 {
   "_id": "ObjectId('64def456789')",
   "patientId": 101,                           // MySQLのpatients.id
-  "doctorId": 201,                            // MySQLのdoctors.id
-  "appointmentId": 51,                        // MySQLのappointments.id
-  "rating": 4,
-  "comments": "医師の対応が丁寧でした。",
-  "createdAt": "2025-06-01T10:00:00Z"
+  "clinicId": 301,                            // MySQLのclinics.id に対応
+  "rating": 4,                                // 総合評価（1〜5）
+  "comments": "受付から診察までスムーズでした。",
+  "createdAt": "2025-06-01T10:00:00Z"         // フィードバック作成日時 (ISO8601形式)
 }
 
 ```
