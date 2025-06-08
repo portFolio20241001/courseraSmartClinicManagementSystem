@@ -53,12 +53,11 @@ NOT NULL によって「必須入力項目」を定義し、データの整合�
 
 | カラム名            | データ型                            | 制約                                                   | 説明                       |
 |---------------------|-----------------------------------|--------------------------------------------------------|----------------------------|
-| id                  | INT, PRIMARY KEY, AUTO_INCREMENT  | NOT NULL                                               | 主キー：予約ID             |
-| patient_id          | INT                               | NOT NULL, FOREIGN KEY → patients(id)                   | 外部キー：患者ID           |
-| doctor_id           | INT                               | NOT NULL, FOREIGN KEY → doctors(id)                    | 外部キー：医師ID           |
-| clinic_location_id  | INT                               | NOT NULL, FOREIGN KEY → clinic_locations(id)           | 外部キー：クリニック拠点ID |
-| appointment_time    | DATETIME                          | NOT NULL                                               | 予約日時                   |
-| status              | ENUM('Scheduled','Completed','Cancelled') | NOT NULL                                       | 予約ステータス             |
+| id                  | BIGINT, PRIMARY KEY, AUTO_INCREMENT | NOT NULL                                               | 主キー：予約ID             |
+| patient_id          | BIGINT                            | NOT NULL, FOREIGN KEY → patients(id)                   | 外部キー：患者ID           |
+| doctor_id           | BIGINT                            | NOT NULL, FOREIGN KEY → doctors(id)                    | 外部キー：医師ID           |
+| appointment_time    | DATETIME                         | NOT NULL, 未来日時制約（アプリケーション側でバリデーション） | 予約日時                   |
+| status              | INT                              | NOT NULL, 0=Scheduled, 1=Completed, 2=Cancelled（整数で管理） | 予約ステータス             |
 | notes               | TEXT                             | NULL（任意）                                           | 備考                       |
 
 ---
