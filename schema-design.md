@@ -10,15 +10,17 @@ NOT NULL によって「必須入力項目」を定義し、データの整合�
 
 ### 🧑 Table: patients（患者情報）
 
-| カラム名       | データ型                            | 制約                   | 説明                       |
-|----------------|-----------------------------------|------------------------|----------------------------|
-| id             | INT, PRIMARY KEY, AUTO_INCREMENT  | NOT NULL               | 主キー：患者ID             |
-| name           | VARCHAR(100)                      | NOT NULL               | 氏名                       |
-| email          | VARCHAR(100), UNIQUE              | NOT NULL, UNIQUE       | メールアドレス（重複不可） |
-| phone          | VARCHAR(20)                      | NOT NULL               | 電話番号                   |
-| date_of_birth  | DATE                             | NOT NULL               | 生年月日                   |
-| gender         | ENUM('male', 'female', 'other')  | NOT NULL               | 性別                       |
-| created_at     | DATETIME DEFAULT CURRENT_TIMESTAMP | NOT NULL             | 登録日時                   |
+| カラム名       | データ型                            | 制約                        | 説明                             |
+|----------------|-----------------------------------|-----------------------------|----------------------------------|
+| id             | BIGINT, PRIMARY KEY, AUTO_INCREMENT | NOT NULL                    | 主キー：患者ID                   |
+| name           | VARCHAR(100)                      | NOT NULL, LENGTH(3〜100)     | 氏名（3〜100文字）              |
+| email          | VARCHAR(100), UNIQUE              | NOT NULL, UNIQUE, VALID_EMAIL | メールアドレス（重複不可）       |
+| password       | VARCHAR(255)                      | NOT NULL, MIN_LENGTH(6)     | パスワード（6文字以上、非公開） |
+| phone          | VARCHAR(20)                       | NOT NULL, REGEXP(10桁数字)  | 電話番号（10桁の数字）          |
+| address        | VARCHAR(255)                      | NOT NULL, MAX_LENGTH(255)   | 住所（最大255文字）             |
+| date_of_birth  | DATE                              | NOT NULL                    | 生年月日                         |
+| gender         | ENUM('male', 'female', 'other')   | NOT NULL                    | 性別                             |
+| created_at     | DATETIME DEFAULT CURRENT_TIMESTAMP | NOT NULL                    | 登録日時（自動生成）            |
 
 ---
 
