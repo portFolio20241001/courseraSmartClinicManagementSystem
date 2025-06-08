@@ -8,35 +8,62 @@ NOT NULL によって「必須入力項目」を定義し、データの整合�
 
 ## 💾 MySQL テーブル定義（NOT NULL 明示）
 
-### 🧑 Table: patients（患者情報）
+### 🧑 Table: users（ユーザー共通情報）
 
-| カラム名       | データ型                            | 制約                        | 説明                             |
-|----------------|-----------------------------------|-----------------------------|----------------------------------|
-| id             | BIGINT, PRIMARY KEY, AUTO_INCREMENT | NOT NULL                    | 主キー：患者ID                   |
-| name           | VARCHAR(100)                      | NOT NULL, LENGTH(3〜100)     | 氏名（3〜100文字）              |
-| email          | VARCHAR(100), UNIQUE              | NOT NULL, UNIQUE, VALID_EMAIL | メールアドレス（重複不可）       |
-| password       | VARCHAR(255)                      | NOT NULL, MIN_LENGTH(6)     | パスワード（6文字以上、非公開） |
-| phone          | VARCHAR(10)                       | NOT NULL, REGEXP(10桁数字)  | 電話番号（10桁の数字）          |
-| address        | VARCHAR(255)                      | NOT NULL, MAX_LENGTH(255)   | 住所（最大255文字）             |
-| date_of_birth  | DATE                              | NOT NULL                    | 生年月日                         |
-| gender         | ENUM('male', 'female', 'other')   | NOT NULL                    | 性別                             |
-| created_at     | DATETIME DEFAULT CURRENT_TIMESTAMP | NOT NULL                    | 登録日時（自動生成）            |
+| カラム名       | データ型                            | 制約                               | 説明                             |
+|----------------|-----------------------------------|----------------------------------|----------------------------------|
+| id             | BIGINT, PRIMARY KEY                | NOT NULL, AUTO_INCREMENT         | 主キー：ユーザーID（Admin, Doctor, Patient共通）  |
+| username       | VARCHAR(50)                       | NOT NULL, UNIQUE, MAX_LENGTH(50) | ユーザー名（ログイン時に使用）   |
+| password_hash  | VARCHAR(255)                     | NOT NULL                        | パスワードのハッシュ値（JSON出力不可）           |
+| role           | ENUM('ADMIN', 'DOCTOR', 'PATIENT')| NOT NULL                       | ユーザーのロール                 |
+| created_at     | DATETIME                         | NOT NULL, DEFAULT CURRENT_TIMESTAMP, 更新不可 | アカウント作成日時               |
+
+---  
+
+### 🛠️ Table: admins（管理者情報）
+
+| カラム名       | データ型                            | 制約                          | 説明                                               |
+|----------------|-----------------------------------|-------------------------------|----------------------------------------------------|
+| id             | BIGINT                            | PRIMARY KEY, NOT NULL          | 管理者ID。usersテーブルの主キーと同じ値を共有。   |
+| created_at     | DATETIME                         | NOT NULL, 更新不可             | 登録日時。初回登録時に現在日時をセット。           |
 
 ---
 
-### 🩺 Table: doctors（医師情報）
+### 🥶 Table: patients（患者情報）
 
-| カラム名             | データ型                             | 制約                                         | 説明                                           |
-|----------------------|--------------------------------------|----------------------------------------------|------------------------------------------------|
-| id                   | BIGINT, PRIMARY KEY, AUTO_INCREMENT | NOT NULL                                     | 主キー：医師ID（自動採番）                    |
-| clinic_id            | INT                                 | NOT NULL, FOREIGN KEY → clinic_locations(id) | 外部キー：所属クリニックID                    |
-| name                 | VARCHAR(100)                         | NOT NULL                                     | 医師の氏名（3〜100文字）                      |
-| specialty            | VARCHAR(50)                          | NOT NULL                                     | 専門分野（3〜50文字）                         |
-| email                | VARCHAR(100), UNIQUE                 | NOT NULL, UNIQUE                             | メールアドレス（有効形式、重複不可）         |
-| password             | VARCHAR(255)                         | NOT NULL                                     | パスワード（6文字以上、JSON出力時は非表示）   |
-| phone                | VARCHAR(10)                          | NOT NULL                                     | 電話番号（数字10桁）                          |
-| available_times      | TEXT（文字列配列をJSONなどで保存）   | NULL許容                                     | 診療可能時間帯（例："09:00-10:00"など）       |
-| created_at           | DATETIME DEFAULT CURRENT_TIMESTAMP   | NOT NULL                                     | 登録日時（自動設定、更新不可）                |
+| カラム名       | データ型                            | 制約                        | 説明                             |
+|----------------|-----------------------------------|-----------------------------|----------------------------------|
+| id             | BIGINT, PRIMARY KEY                | NOT NULL                    | 主キー：患者ID（UserエンティティのIDと一致）                   |
+| phone          | VARCHAR(13)                      | NOT NULL, REGEXP(`^\d{3}-\d{4}-\d{4}$`)  | 電話番号（ハイフンあり形式、例：080-1234-5678）          |
+| address        | VARCHAR(255)                      | NOT NULL, MAX_LENGTH(255)   | 住所（最大255文字）             |
+| date_of_birth  | DATE                              | NOT NULL                    | 生年月日                         |
+| gender         | ENUM('male', 'female', 'other')   | NOT NULL                    | 性別                             |
+| created_at     | DATETIME DEFAULT CURRENT_TIMESTAMP | NOT NULL                    | 登録日時（作成時に自動生成）            |
+
+
+※ `name`, `email`, `password` などの基本情報は `User` テーブルに持たせ、`Patient` テーブルは患者固有の情報を管理しています。
+
+---
+
+### 💊 Table: doctors（医師情報）
+
+| カラム名       | データ型               | 制約                      | 説明                              |
+|----------------|------------------------|---------------------------|-----------------------------------|
+| id             | BIGINT, PRIMARY KEY     | NOT NULL                  | 主キー：医師ID（UserのIDと一致） |
+| clinic_location_id      | INT            | NOT NULL, 外部キー        |  clinic_locations.idを参照                      |
+| specialty      | VARCHAR(50)            | NOT NULL                  | 専門分野                         |
+| phone          | VARCHAR(13)                      | NOT NULL, REGEXP(`^\d{3}-\d{4}-\d{4}$`)  | 電話番号（ハイフンあり形式、例：080-1234-5678）          |
+| created_at     | DATETIME               | NOT NULL, 更新不可        | 登録日時（Java側で自動生成）                        |
+
+---
+
+### ⏰ Table: doctor_available_times（診療可能時間帯）
+※Javaエンティティで@ElementCollectionした場合
+
+| カラム名       | データ型               | 制約                      | 説明                              |
+|----------------|------------------------|---------------------------|-----------------------------------|
+| doctor_id      | BIGINT                 | NOT NULL, 外部キー         | doctors.idを参照                  |
+| available_time | VARCHAR(20)            | NOT NULL                  | 診療可能時間帯（例："09:00-10:00"）|
 
 ---
 
@@ -47,22 +74,8 @@ NOT NULL によって「必須入力項目」を定義し、データの整合�
 | id          | INT, PRIMARY KEY, AUTO_INCREMENT  | NOT NULL               | 主キー：所在地ID           |
 | name        | VARCHAR(100)                      | NOT NULL               | クリニック名               |
 | address     | VARCHAR(255)                      | NOT NULL               | 所在地住所                 |
-| phone       | VARCHAR(10)                       | NOT NULL               | 電話番号                   |
+| phone          | VARCHAR(13)                      | NOT NULL, REGEXP(`^\d{3}-\d{4}-\d{4}$`)  | 電話番号（ハイフンあり形式、例：080-1234-5678）          |
 | created_at  | DATETIME DEFAULT CURRENT_TIMESTAMP | NOT NULL               | 登録日時                   |
-
----
-
-### 📅 Table: appointments（予約情報）
-
-| カラム名            | データ型                            | 制約                                                   | 説明                                     |
-|---------------------|-----------------------------------|--------------------------------------------------------|------------------------------------------|
-| id                  | BIGINT, PRIMARY KEY, AUTO_INCREMENT | NOT NULL                                               | 主キー：予約ID                           |
-| patient_id          | BIGINT                            | NOT NULL, FOREIGN KEY → patients(id)                   | 外部キー：患者ID                         |
-| doctor_id           | BIGINT                            | NOT NULL, FOREIGN KEY → doctors(id)                    | 外部キー：医師ID                         |
-| clinic_id           | INT                               | NOT NULL, FOREIGN KEY → clinic_locations(id)           | 外部キー：予約対象のクリニックID        |
-| appointment_time    | DATETIME                          | NOT NULL, アプリ側で未来日時バリデーション             | 予約日時                                 |
-| status              | INT                               | NOT NULL, 0=Scheduled, 1=Completed, 2=Cancelled         | 予約ステータス（整数で管理）            |
-| notes               | TEXT                              | NULL許容                                               | 備考                                     |
 
 ---
 
@@ -80,15 +93,30 @@ NOT NULL によって「必須入力項目」を定義し、データの整合�
 
 ---
 
-### 🛠️ Table: admins（管理者情報）
+### 📅 Table: appointments（予約情報）
 
-| カラム名         | データ型                            | 制約                   | 説明                       |
-|------------------|-----------------------------------|------------------------|----------------------------|
-| id               | INT, PRIMARY KEY, AUTO_INCREMENT  | NOT NULL               | 主キー：管理者ID           |
-| username         | VARCHAR(50), UNIQUE               | NOT NULL, UNIQUE       | ユーザー名（ログイン用）   |
-| password_hash    | VARCHAR(255)                      | NOT NULL               | ハッシュ化パスワード（bcrypt）       |
-| role             | ENUM('admin', 'superadmin')       | NOT NULL               | 権限                       |
-| created_at       | DATETIME DEFAULT CURRENT_TIMESTAMP | NOT NULL             | 登録日時                   |
+| カラム名            | データ型                            | 制約                                                   | 説明                                     |
+|---------------------|-----------------------------------|--------------------------------------------------------|------------------------------------------|
+| id                  | BIGINT, PRIMARY KEY, AUTO_INCREMENT | NOT NULL                                               | 主キー：予約ID                           |
+| patient_id          | BIGINT                            | NOT NULL, FOREIGN KEY → patients(id)                   | 外部キー：患者ID                         |
+| doctor_id           | BIGINT                            | NOT NULL, FOREIGN KEY → doctors(id)                    | 外部キー：医師ID                         |
+| appointment_time    | DATETIME                          | NOT NULL, アプリ側で未来日時バリデーション             | 予約日時                                 |
+| status              | INT                               | NOT NULL, 0=Scheduled, 1=Completed, 2=Cancelled         | 予約ステータス（整数で管理）            |
+
+---
+
+
+
+
+
+### ⚠️ 備考
+
+- `id` は `users` テーブルの `id` と1対1で対応しており、外部キー制約 `fk_admin_user` が設定されています。  
+- `users.id` が削除されると連動して `admins` の該当レコードも削除されます（`ON DELETE CASCADE`）。  
+- 管理者の権限や認証情報（ユーザー名・パスワード等）は `User` エンティティで管理されます。  
+- 管理者ごとの拡張情報はこのテーブルに追加可能です。
+
+
 
 ---
 
