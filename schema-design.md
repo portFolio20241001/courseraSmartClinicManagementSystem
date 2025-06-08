@@ -22,18 +22,18 @@ NOT NULL によって「必須入力項目」を定義し、データの整合�
 
 ---
 
-### 👨‍⚕️ Table: doctors（医師情報）
+### 🩺 Table: doctors（医師情報）
 
-| カラム名             | データ型                            | 制約                   | 説明                       |
-|----------------------|-----------------------------------|------------------------|----------------------------|
-| id                   | INT, PRIMARY KEY, AUTO_INCREMENT  | NOT NULL               | 主キー：医師ID             |
-| name                 | VARCHAR(100)                      | NOT NULL               | 氏名                       |
-| email                | VARCHAR(100), UNIQUE              | NOT NULL, UNIQUE       | メールアドレス（重複不可） |
-| specialization       | VARCHAR(100)                      | NOT NULL               | 専門分野                   |
-| phone                | VARCHAR(20)                      | NOT NULL               | 電話番号                   |
-| available_start_time | TIME                             | NOT NULL               | 診察開始時間               |
-| available_end_time   | TIME                             | NOT NULL               | 診察終了時間               |
-| created_at           | DATETIME DEFAULT CURRENT_TIMESTAMP | NOT NULL             | 登録日時                   |
+| カラム名             | データ型                             | 制約                          | 説明                                           |
+|----------------------|--------------------------------------|-------------------------------|------------------------------------------------|
+| id                   | BIGINT, PRIMARY KEY, AUTO_INCREMENT | NOT NULL                      | 主キー：医師ID（自動採番）                    |
+| name                 | VARCHAR(100)                         | NOT NULL                      | 医師の氏名（3〜100文字）                      |
+| specialty            | VARCHAR(50)                          | NOT NULL                      | 専門分野（3〜50文字）                         |
+| email                | VARCHAR(100), UNIQUE                 | NOT NULL, UNIQUE              | メールアドレス（有効形式、重複不可）         |
+| password             | VARCHAR(255)                         | NOT NULL                      | パスワード（6文字以上、JSON出力時は非表示）   |
+| phone                | VARCHAR(10)                          | NOT NULL                      | 電話番号（数字10桁）                          |
+| available_times      | TEXT (List 形式として保存)           | NULL許容                      | 診療可能時間帯（例："09:00-10:00"の文字列配列）|
+| created_at           | DATETIME                             | NOT NULL, DEFAULT CURRENT_TIMESTAMP | 登録日時（自動設定、更新不可）         |
 
 ---
 
