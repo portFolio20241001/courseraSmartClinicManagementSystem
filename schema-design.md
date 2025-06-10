@@ -146,7 +146,7 @@ MongoDB は、柔軟なスキーマ設計が求められるデータを格納す
 ```json
 {
   "_id": "ObjectId('64abc123456')",            // MongoDB固有のドキュメントID
-  "patientName": "山田　太郎",                            // MySQLのpatients.idと紐づく数値ID
+  "patientId": "101",                            // MySQLのpatients.idと紐づく数値ID
   "appointmentId": 51,                         // MySQLのappointments.idと紐づく数値ID
   "medication": "パラセタモール",
   "dosage": "500mg",
