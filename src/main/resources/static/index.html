@@ -1,4 +1,61 @@
 <!-- index.html -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Select Role</title>
+  <link rel="icon" href="./assets/images/logo/logo.png">
+  <link rel="stylesheet" href="./assets/css/index.css">
+  <link rel="stylesheet" href="./assets/css/style.css">
+  <script src="./js/util.js" defer></script>
+  <script src="./js/render.js" defer></script>
+  <script src="./js/components/header.js" defer></script>
+  <script src="./js/components/footer.js" defer></script>
+</head>
+<body>
+  <div class="container">
+    <div class="wrapper">
+
+      <!-- Header -->
+      <div id="header"></div>
+
+      <!-- Main Content -->
+      <main class="main-content">
+        <h2>役割を選択してください</h2>
+        <div class="role-selection">
+          <button id="adminLogin">Admin</button>
+          <button id="doctorLogin">Doctor</button>
+          <button id="patientBtn">Patient</button>
+        </div>
+      </main>
+
+      <!-- Footer -->
+      <div id="footer"></div>
+    </div>
+  </div>
+
+<!-- モーダル -->
+  <div id="modal" class="modal hidden">
+    <div class="modal-content">
+      <span id="closeModal" class="close-button">&times;</span>  <!-- 「&times」が×ボタンを表す -->
+      <div id="modal-body"></div>
+    </div>
+  </div>
+
+  <!-- Page-Specific Logic -->
+  <script type="module" src="./js/services/index.js"></script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+<!-- index.html -->
 <!-- 
 
 Step-by-Step Explanation of `index.html`.

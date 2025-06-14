@@ -1,3 +1,109 @@
+/* adminDashboard のスタイルシート */
+
+/* 
+グローバルリセット
+全ての要素のマージン・パディングをリセットし、box-sizingを統一
+*/
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* 
+HTMLとBody
+全体の高さとフォントを設定
+*/
+html, body {
+  height: 100%;
+  font-family: Arial, sans-serif;
+}
+
+/* 
+レイアウト全体を包むラッパー
+縦方向にフレックスで並べ、画面全体をカバー
+*/
+.wrapper {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* 
+セクション見出し
+大きく太字で、下に余白をとる
+*/
+h2 {
+  font-size: 32px;
+  font-weight: bold;
+  margin-bottom: 50px;
+  color: #003e3e;
+}
+
+/* 
+メインコンテンツ
+背景画像付きの縦積みフレックスレイアウト
+*/
+.main-content {
+  flex-grow: 1;
+  padding: 40px;
+  display: flex;
+  flex-direction: column;
+  text-align: center;
+  background-image: url("index.png");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+}
+
+/* 
+メインのボタン
+赤色、白文字、丸みのある角、一定幅
+*/
+button {
+  background-color: #A62B1F;
+  color: white;
+  border: none;
+  border-radius: 12px;
+  padding: 10px 20px;
+  margin-top: 20px;
+  width: 200px;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+/* ホバー時（同じ背景色を維持） */
+button:hover {
+  background-color: #A62B1F;
+}
+
+/* 
+管理者専用ボタン
+グレー背景で小さめのサイズ、強調されたテキスト
+*/
+.adminBtn {
+  background-color: #f4f4f4;
+  color: #333;
+  font-weight: bold;
+  width: 110px;
+  padding: 10px 0;
+  border: none;
+  cursor: pointer;
+}
+
+/* ホバー時：テキスト色をブランドカラーに */
+.adminBtn:hover {
+  color: #A62B1F;
+}
+
+
+
+
+
+
+
+
 /*this is the style sheet for the adminDashboard. */
 
 /* 

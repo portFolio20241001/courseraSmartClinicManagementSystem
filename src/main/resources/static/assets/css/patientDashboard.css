@@ -1,79 +1,88 @@
+/* カード内のアクションボタンのスタイル設定 */
 .card-actions {
-    background-color: #244557;
-    padding: 10px;
-    text-align: center;
-  }
+  background-color: #244557; /* 背景色を濃い青系に設定 */
+  padding: 10px; /* 内側の余白を10pxに設定 */
+  text-align: center; /* テキストを中央寄せにする */
+}
 
-  .card-actions:hover{
-    background-color: #1c3745;
-  }
-  .ripple-overlay {
-    position: fixed;
-    width: 20px;
-    height: 20px;
-    background-color: #1c3745;
-    border-radius: 50%;
-    z-index: 9999;
-    transform: translate(-50%, -50%) scale(0);
-    transition: transform 1s ease-out, opacity 1s ease;
-  }
-  
-  .ripple-overlay.active {
-    transform: translate(-50%, -50%) scale(150);
-    opacity: 1;
-  }
-  
-  .modalApp {
-    position: fixed;
-  bottom: -100%;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 50%;
-  background: #fff;
-  padding: 20px;
-  z-index: 10000;
-  transition: bottom 1.5s ease-in;
-  box-shadow: 0 -5px 10px rgba(0, 0, 0, 0.3);
-  border-radius: 10px 10px 0 0;
-  text-align: center;
-  }
-  
-  .modalApp.active {
-    bottom: 0;
-  }
-  
-  .modalApp h2 {
-    margin-top: 20px;
-  }
-  
-  .modalApp input {
-    display: block;
-    margin: 10px auto;
-    padding: 10px;
-    width: 90%;
-    margin-bottom: 40px;
-  }
+/* カードアクションにマウスを乗せたときの背景変更 */
+.card-actions:hover {
+  background-color: #1c3745; /* 背景色を少し暗めに変更 */
+}
 
-  .modalApp select {
-    display: block;
-    margin: 10px auto;
-    padding: 10px;
-    width: 90%;
-    margin-bottom: 40px;
-  }
-  
-  .confirm-booking {
-    padding: 10px 20px;
-    background: #1c3745;
-    color: #fff;
-    border: none;
-    cursor: pointer;
-    
-  
-    
-  }
-  .confirm-booking:hover {
-    filter: brightness(1.2);
-    background-color: #1c3745;
-  }
-  
+/* クリック時のリップルエフェクトのスタイル */
+.ripple-overlay {
+  position: fixed; /* 画面に固定配置する */
+  width: 20px; /* 幅20px */
+  height: 20px; /* 高さ20px */
+  background-color: #1c3745; /* 背景色は暗い青色 */
+  border-radius: 50%; /* 円形にする */
+  z-index: 9999; /* 最前面に表示する */
+  transform: translate(-50%, -50%) scale(0); /* 初期状態では非表示スケール */
+  transition: transform 1s ease-out, opacity 1s ease; /* トランジション設定 */
+}
+
+/* リップルがアクティブ状態のスタイル（表示時） */
+.ripple-overlay.active {
+  transform: translate(-50%, -50%) scale(150); /* 拡大表示 */
+  opacity: 1; /* 不透明にする */
+}
+
+/* モーダル（ポップアップ）全体のスタイル */
+.modalApp {
+  position: fixed; /* 固定配置 */
+  bottom: -100%; /* 最初は画面外に配置 */
+  left: 50%; /* 横方向中央に配置 */
+  transform: translateX(-50%); /* 中央揃えの補正 */
+  width: 50%; /* 横幅は画面の50% */
+  background: #fff; /* 背景色は白 */
+  padding: 20px; /* 内側の余白を20pxに設定 */
+  z-index: 10000; /* 前面に表示する */
+  transition: bottom 1.5s ease-in; /* 下から出てくる動き */
+  box-shadow: 0 -5px 10px rgba(0, 0, 0, 0.3); /* 上方向に影をつける */
+  border-radius: 10px 10px 0 0; /* 上部のみ角丸にする */
+  text-align: center; /* 中央揃え */
+}
+
+/* モーダルが表示アクティブ状態のときの位置設定 */
+.modalApp.active {
+  bottom: 0; /* 画面下部に表示される */
+}
+
+/* モーダル内の見出し（h2）スタイル */
+.modalApp h2 {
+  margin-top: 20px; /* 上の余白を20px設定 */
+}
+
+/* モーダル内のテキスト入力フィールドのスタイル */
+.modalApp input {
+  display: block; /* ブロック要素に変更 */
+  margin: 10px auto; /* 上下10px、左右中央揃え */
+  padding: 10px; /* 内側の余白を10pxに設定 */
+  width: 90%; /* 幅を90%に設定 */
+  margin-bottom: 40px; /* 下の余白を40pxに設定 */
+}
+
+/* モーダル内のセレクトボックスのスタイル */
+.modalApp select {
+  display: block; /* ブロック表示 */
+  margin: 10px auto; /* 上下10px、左右中央揃え */
+  padding: 10px; /* 内側の余白を10pxに設定 */
+  width: 90%; /* 幅を90%に設定 */
+  margin-bottom: 40px; /* 下の余白を40pxに設定 */
+}
+
+/* 「予約を確定する」ボタンのスタイル */
+.confirm-booking {
+  padding: 10px 20px; /* 縦10px、横20pxの内側余白 */
+  background: #1c3745; /* 背景色は暗い青色 */
+  color: #fff; /* テキスト色は白 */
+  border: none; /* 枠線を非表示にする */
+  cursor: pointer; /* カーソルをポインターに変更 */
+}
+
+/* 「予約を確定する」ボタンのホバー時のスタイル */
+.confirm-booking:hover {
+  filter: brightness(1.2); /* 明るさを1.2倍にする */
+  background-color: #1c3745; /* 背景色はそのまま */
+}

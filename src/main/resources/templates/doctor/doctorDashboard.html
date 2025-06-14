@@ -1,5 +1,76 @@
 <!-- doctorDashboard.html -->
 
+<!DOCTYPE html>
+<html lang="ja" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+  <!-- メタ情報とリソースの読み込み -->
+  <meta charset="UTF-8">
+  <link rel="icon" type="image/png" th:href="@{/assets/images/logo/logo.png}" />
+  <title>医師ダッシュボード</title>
+
+  <!-- CSSファイルの読み込み -->
+  <link rel="stylesheet" th:href="@{/css/adminDashboard.css}">
+  <link rel="stylesheet" th:href="@{/css/doctorDashboard.css}">
+  <link rel="stylesheet" th:href="@{/css/style.css}">
+
+  <!-- JavaScriptファイルの読み込み（遅延実行） -->
+  <script defer th:src="@{/js/render.js}"></script>
+  <script defer th:src="@{/js/util.js}"></script>
+  <script defer th:src="@{/js/header.js}"></script>
+  <script defer th:src="@{/js/footer.js}"></script>
+  <script defer type="module" th:src="@{/js/doctorDashboard.js}"></script>
+</head>
+
+<body onload="renderContent()">
+  <div class="container">
+    <div class="wrapper">
+
+      <!-- ヘッダー挿入箇所 -->
+      <div id="header"></div>
+
+      <!-- メインコンテンツ -->
+      <div class="main-content">
+
+        <!-- 検索バー -->
+        <input type="text" id="searchBar" class="searchBar" placeholder="患者名やIDで検索" />
+
+        <!-- フィルターコントロール -->
+        <div class="filter-controls">
+          <button id="todayButton">本日の予約を見る</button>
+          <input type="date" id="datePicker" aria-label="日付を選択">
+        </div>
+
+        <!-- 患者データテーブル -->
+        <table class="patient-table">
+          <thead>
+            <tr>
+              <th>患者ID</th>
+              <th>氏名</th>
+              <th>電話番号</th>
+              <th>メールアドレス</th>
+              <th>処方箋</th>
+            </tr>
+          </thead>
+          <tbody id="patientTableBody">
+            <!-- JavaScriptで動的にデータを挿入 -->
+          </tbody>
+        </table>
+      </div>
+
+      <!-- フッター挿入箇所 -->
+      <div id="footer"></div>
+
+    </div> <!-- /.wrapper -->
+  </div> <!-- /.container -->
+</body>
+
+</html>
+
+
+
+<!-- doctorDashboard.html -->
+
 <!-- 
 Step-by-Step Explanation of `doctorDashboard.html`
 This file defines the Doctor Dashboard interface, allowing doctors to view and manage their patient appointments, search records, and access patient prescriptions.

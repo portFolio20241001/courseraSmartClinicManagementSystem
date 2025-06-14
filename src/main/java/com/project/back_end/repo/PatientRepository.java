@@ -1,29 +1,34 @@
 package com.project.back_end.repo;
 
-public interface PatientRepository {
-    // 1. Extend JpaRepository:
-//    - The repository extends JpaRepository<Patient, Long>, which provides basic CRUD functionality.
-//    - This allows the repository to perform operations like save, delete, update, and find without needing to implement these methods manually.
-//    - JpaRepository also includes features like pagination and sorting.
+import com.project.back_end.Entity.Patient;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
 
-// Example: public interface PatientRepository extends JpaRepository<Patient, Long> {}
+import java.util.Optional;
 
-// 2. Custom Query Methods:
+@Repository  // このインターフェースはSpringにより自動的に実装されるリポジトリ
+public interface PatientRepository extends JpaRepository<Patient, Long> {
 
-//    - **findByEmail**:
-//      - This method retrieves a Patient by their email address.
-//      - Return type: Patient
-//      - Parameters: String email
+    /**
+     * ユーザー名（User.username）からUserを介して患者（Patient）を検索。
+     * - Patient は User エンティティと 1対1 で紐づいている前提。
+     * - 内部結合のような形で、User.username が一致する Patient を取得。
+     *
+     * @param username 検索対象のユーザー名
+     * @return 該当する Patient（存在しない場合は空）
+     */
+    Optional<Patient> findByUser_Username(String username);
 
-//    - **findByEmailOrPhone**:
-//      - This method retrieves a Patient by either their email or phone number, allowing flexibility for the search.
-//      - Return type: Patient
-//      - Parameters: String email, String phone
-
-// 3. @Repository annotation:
-//    - The @Repository annotation marks this interface as a Spring Data JPA repository.
-//    - Spring Data JPA automatically implements this repository, providing the necessary CRUD functionality and custom queries defined in the interface.
-
+    /**
+     * ユーザー名（User.username）または患者の電話番号（Patient.phone）で検索。
+     * - ユーザー名は User エンティティから、
+     * - 電話番号は Patient エンティティ自身のフィールドから検索。
+     * - いずれか一方が一致すれば該当の Patient を返す。
+     *
+     * @param username ユーザー名
+     * @param phone 電話番号（患者の電話）
+     * @return 該当する Patient（存在しない場合は空）
+     */
+    Optional<Patient> findByUser_UsernameOrPhone(String username, String phone);
 
 }
-

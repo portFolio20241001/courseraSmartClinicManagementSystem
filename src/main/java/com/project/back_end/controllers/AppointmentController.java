@@ -6,7 +6,6 @@ import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -17,88 +16,175 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.project.back_end.models.Appointment;
+import com.project.back_end.Entity.Appointment;
 import com.project.back_end.services.AppointmentService;
-import com.project.back_end.services.Service;
+import com.project.back_end.services.CommonService;  // ★共通バリデーション用サービス
 
 import jakarta.validation.Valid;
 
+/**
+ * <h2>AppointmentController</h2>
+ * <pre>
+ * ・予約（Appointment）に関する CRUD エンドポイントを提供する REST コントローラ  
+ * ・トークン検証を行い、ユーザーのロール（doctor / patient）に応じてアクセス制御を行う  
+ *
+ *  エンドポイント一覧
+ *  ┌─────────────────────────────────────────────────────────┐
+ *  │ GET    /appointments/{date}/{patientName}/{token}   	    │ … 予約一覧取得（医師）  │
+ *  │ POST   /appointments/{token}                           					│ … 予約作成（患者）    │
+ *  │ PUT    /appointments/{token}                       					    │ … 予約更新（患者）    │
+ *  │ DELETE /appointments/{id}/{token}                  			    │ … 予約キャンセル（患者）│
+ *  └─────────────────────────────────────────────────────────┘
+ * </pre>
+ *
+ * @author  back_end team
+ */
 @RestController
 @RequestMapping("/appointments")
+@Valid
 public class AppointmentController {
 
+    /** 予約関連ビジネスロジック */
     private final AppointmentService appointmentService;
-    private final Service service;
+    /** トークン検証／予約検証などの共通ロジック */
+    private final CommonService       commonService;
 
+    /** コンストラクタ・インジェクション */
     @Autowired
-    public AppointmentController(AppointmentService appointmentService, Service service) {
+    public AppointmentController(AppointmentService appointmentService,
+                                 CommonService service) {
         this.appointmentService = appointmentService;
-        this.service = service;
+        this.commonService            = service;
     }
 
-    @GetMapping("/{date}/{patientName}/{token}")
-    public ResponseEntity<Map <String,Object>> getAppointments(@PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date, @PathVariable String patientName,@PathVariable String token)
-    {
-        Map<String, Object> map = new HashMap<>();
-        ResponseEntity<Map<String,String>> tempMap= service.validateToken(token, "doctor");
-        if (!tempMap.getBody().isEmpty()) {
-            map.putAll(tempMap.getBody());
-            return new ResponseEntity<>(map, tempMap.getStatusCode());
-        }
-        map=appointmentService.getAppointment(patientName, date, token);
-        return ResponseEntity.status(HttpStatus.OK).body(map);
-    }
-    
+    // ------------------------------------------------------------------
+    // ① 予約一覧取得（医師）
+    //    GET /appointments/{doctorId}/{date}/{patientName}/{token}
+    // ------------------------------------------------------------------
 
-    @PostMapping("/{token}")
-    public ResponseEntity<Map<String, String>> bookAppointment(@RequestBody @Valid Appointment appointment,
+    /**
+     * 指定日・患者名で医師の予約を検索して返却する。  
+     * <p>トークンは <b>doctor</b> ロールとして検証される。</p>
+     *
+     * @param doctorId         医師のID
+     * @param date         予約日 (yyyy-MM-dd)
+     * @param patientName  患者氏名（部分一致）  
+     *                     `"null"` など空文字の場合はフィルタしない
+     * @param token        認証トークン
+     *
+     * @return 200：予約一覧 / その他：検証失敗
+     */
+    @GetMapping("/{doctorId}/{date}/{patientName}/{token}")
+    public ResponseEntity<Map<String, Object>> getAppointments(
+            @PathVariable Long doctorId,
+            @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+            @PathVariable String patientName,
             @PathVariable String token) {
 
-        ResponseEntity<Map<String, String>> tempMap = service.validateToken(token, "patient");
-        if (!tempMap.getBody().isEmpty()) {
-            return tempMap;
-        }
-
-        Map<String, String> response = new HashMap<>();
-        int out = service.validateAppointment(appointment);
-        if (out == 1) {
-            int res = appointmentService.bookAppointment(appointment);
-            if (res == 1) {
-                response.put("message", "Appointment Booked Successfully");
-                return ResponseEntity.status(HttpStatus.CREATED).body(response); // 201 Created
-
-            }
-            response.put("message", "Internal Server Error");
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response); // 409 Conflict
-
-        } else if (out == -1) {
-            response.put("message", "Invalid doctor id");
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
-        }
-
-        response.put("message", "Appointment already booked for given time or Doctor not available");
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
-
-    }
-
-    @PutMapping("/{token}")
-    public ResponseEntity<Map<String, String>> updateAppointment(@PathVariable String token, @RequestBody @Valid Appointment appointment) {
+        /* ===== 1. トークン検証（doctor ロール） ===== */
+        ResponseEntity<Map<String, String>> tokenResult = commonService.validateToken(token, "doctor");
         
-        ResponseEntity<Map<String, String>> tempMap = service.validateToken(token, "patient");
-        if (!tempMap.getBody().isEmpty()) {
-            return tempMap;
+        if (tokenResult.getBody() != null && !tokenResult.getBody().isEmpty()) {
+            // エラーが含まれていればそのまま返す
+            Map<String, Object> body = new HashMap<>(tokenResult.getBody());
+            return ResponseEntity.status(tokenResult.getStatusCode()).body(body);
         }
-        return appointmentService.updateAppointment(appointment);   
+
+        /* ===== 2. 予約一覧取得　返却 ===== */
+        return appointmentService.getAppointments(doctorId, date, patientName, token);
+
     }
 
+    // ------------------------------------------------------------------
+    // ② 予約作成（患者）
+    // ------------------------------------------------------------------
+
+    /**
+     * 新規予約を作成する。
+     *
+     * @param appointment  予約情報（JSON）
+     * @param token        患者トークン
+     * @return 201：作成成功 / 400・409 など
+     */
+    @PostMapping("/{token}")
+    public ResponseEntity<Map<String, String>> bookAppointment(
+            @RequestBody @Valid Appointment appointment,
+            @PathVariable String token) {
+
+        /* トークン検証（patient ロール） */
+        ResponseEntity<Map<String, String>> tokenResult = commonService.validateToken(token, "patient");
+        
+        if (tokenResult.getBody() != null && !tokenResult.getBody().isEmpty()) {
+            return tokenResult;
+        }
+
+        Map<String, String> res = new HashMap<>();
+
+        /* 予約可能か検証 */
+        int chk = commonService.validateAppointment(appointment);
+        
+        if (chk == -1) {
+            res.put("message", "無効な Doctor ID です。");
+            return ResponseEntity.badRequest().body(res);
+        }
+        if (chk == 0) {
+            res.put("message", "指定時間はすでに予約済み、または医師が不在です。");
+            return ResponseEntity.badRequest().body(res);
+        }
+
+        /* 予約処理 */
+        return appointmentService.bookAppointment(appointment);
+    }
+
+    // ------------------------------------------------------------------
+    // ③ 予約更新（患者）
+    // ------------------------------------------------------------------
+
+    /**
+     * 既存予約を更新する。
+     *
+     * @param token       患者トークン
+     * @param appointment 更新内容
+     * @return 200：更新成功 / 4xx：エラー
+     */
+    @PutMapping("/{token}")
+    public ResponseEntity<Map<String, String>> updateAppointment(
+            @PathVariable String token,
+            @RequestBody @Valid Appointment appointment) {
+
+        /* トークン検証（patient ロール） */
+        ResponseEntity<Map<String, String>> tokenResult = commonService.validateToken(token, "patient");
+        
+        if (tokenResult.getBody() != null && !tokenResult.getBody().isEmpty()) {
+            return tokenResult;
+        }
+
+        return appointmentService.updateAppointment(appointment);
+    }
+
+    // ------------------------------------------------------------------
+    // ④ 予約キャンセル（患者）
+    // ------------------------------------------------------------------
+
+    /**
+     * 予約をキャンセルする。
+     *
+     * @param id    予約 ID
+     * @param token 患者トークン
+     * @return 200：キャンセル成功 / 4xx：エラー
+     */
     @DeleteMapping("/{id}/{token}")
-    public ResponseEntity<Map<String, String>>  cancelAppointment(@PathVariable Long id, @PathVariable String token) {
+    public ResponseEntity<Map<String, String>> cancelAppointment(
+            @PathVariable Long id,
+            @PathVariable String token) {
 
-        ResponseEntity<Map<String, String>> tempMap = service.validateToken(token, "patient");
-        if (!tempMap.getBody().isEmpty()) {
-            return tempMap;
+        /* トークン検証（patient ロール） */
+        ResponseEntity<Map<String, String>> tokenResult = commonService.validateToken(token, "patient");
+        
+        if (tokenResult.getBody() != null && !tokenResult.getBody().isEmpty()) {
+            return tokenResult;
         }
-        return appointmentService.cancelAppointment(id,token);
-    }
 
+        return appointmentService.cancelAppointment(id, token);
+    }
 }

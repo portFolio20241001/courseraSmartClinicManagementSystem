@@ -1,45 +1,233 @@
 package com.project.back_end.services;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.project.back_end.Entity.Appointment;
+import com.project.back_end.repo.AppointmentRepository;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
+@Service
+@RequiredArgsConstructor
+@Slf4j
 public class AppointmentService {
-// 1. **Add @Service Annotation**:
-//    - To indicate that this class is a service layer class for handling business logic.
-//    - The `@Service` annotation should be added before the class declaration to mark it as a Spring service component.
-//    - Instruction: Add `@Service` above the class definition.
 
-// 2. **Constructor Injection for Dependencies**:
-//    - The `AppointmentService` class requires several dependencies like `AppointmentRepository`, `Service`, `TokenService`, `PatientRepository`, and `DoctorRepository`.
-//    - These dependencies should be injected through the constructor.
-//    - Instruction: Ensure constructor injection is used for proper dependency management in Spring.
+    private final AppointmentRepository appointmentRepository;
+    private final TokenService tokenService;
+    private final CommonService service; // validateAppointment()を持つサービス
 
-// 3. **Add @Transactional Annotation for Methods that Modify Database**:
-//    - The methods that modify or update the database should be annotated with `@Transactional` to ensure atomicity and consistency of the operations.
-//    - Instruction: Add the `@Transactional` annotation above methods that interact with the database, especially those modifying data.
+//  private final PatientRepository patientRepository;
+//  private final DoctorRepository doctorRepository;
 
-// 4. **Book Appointment Method**:
-//    - Responsible for saving the new appointment to the database.
-//    - If the save operation fails, it returns `0`; otherwise, it returns `1`.
-//    - Instruction: Ensure that the method handles any exceptions and returns an appropriate result code.
+    /**
+     * 新しい予約を登録するメソッド。
+     * 予約保存に成功した場合はHTTP 200を返し、失敗時は500エラーを返す。
+     * @param appointment 登録する予約情報
+     * @return 処理結果のメッセージを含むHTTPレスポンス
+     */
+    @Transactional
+    public ResponseEntity<Map<String, String>> bookAppointment(Appointment appointment) {
+    	
+        Map<String, String> response = new HashMap<>();
+        
+        try {
+        	
+            appointmentRepository.save(appointment);
+            response.put("message", "予約が正常に登録されました。");
+            return ResponseEntity.status(HttpStatus.CREATED).body(response);   // ← 201 Created
+            
+        } catch (Exception e) {
+        	
+            log.error("予約保存に失敗しました: {}", e.getMessage());
+            response.put("error", "予約保存に失敗しました。");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+            
+        }
+    }
 
-// 5. **Update Appointment Method**:
-//    - This method is used to update an existing appointment based on its ID.
-//    - It validates whether the patient ID matches, checks if the appointment is available for updating, and ensures that the doctor is available at the specified time.
-//    - If the update is successful, it saves the appointment; otherwise, it returns an appropriate error message.
-//    - Instruction: Ensure proper validation and error handling is included for appointment updates.
+    /**
+     * 既存の予約を更新するメソッド。
+     * - 予約が存在するか確認
+     * - 更新権限（患者IDの一致）をチェック
+     * - 医師の空き時間をservice.validateAppointment()で検証
+     * - 問題なければ予約情報を更新し保存
+     * @param updatedAppointment 更新内容を含む予約オブジェクト
+     * @return 処理結果メッセージを含むHTTPレスポンス
+     */
+    @Transactional
+    public ResponseEntity<Map<String, String>> updateAppointment(Appointment updatedAppointment) {
+        Map<String, String> response = new HashMap<>();
 
-// 6. **Cancel Appointment Method**:
-//    - This method cancels an appointment by deleting it from the database.
-//    - It ensures the patient who owns the appointment is trying to cancel it and handles possible errors.
-//    - Instruction: Make sure that the method checks for the patient ID match before deleting the appointment.
+        // 予約の存在確認
+        Optional<Appointment> optionalAppointment = appointmentRepository.findById(updatedAppointment.getId());
+        if (optionalAppointment.isEmpty()) {
+            response.put("message", "予約が存在しません。");
+            return ResponseEntity.badRequest().body(response);
+        }
 
-// 7. **Get Appointments Method**:
-//    - This method retrieves a list of appointments for a specific doctor on a particular day, optionally filtered by the patient's name.
-//    - It uses `@Transactional` to ensure that database operations are consistent and handled in a single transaction.
-//    - Instruction: Ensure the correct use of transaction boundaries, especially when querying the database for appointments.
+        Appointment existingAppointment = optionalAppointment.get();
 
-// 8. **Change Status Method**:
-//    - This method updates the status of an appointment by changing its value in the database.
-//    - It should be annotated with `@Transactional` to ensure the operation is executed in a single transaction.
-//    - Instruction: Add `@Transactional` before this method to ensure atomicity when updating appointment status.
+        // 更新権限チェック（予約患者と更新患者が同一か）
+        if (!existingAppointment.getPatient().getId().equals(updatedAppointment.getPatient().getId())) {
+            response.put("message", "この予約を更新する権限がありません。");
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response);
+        }
 
+        // --- 医師空き時間チェック ---
+        int avail = service.validateAppointment(updatedAppointment);
+        
+        if (avail == -1) {
+        	response.put("message", "医師が存在しません。");
+            return ResponseEntity.badRequest().body(response);
+        }
+        
+        if (avail == 0) {
+        	response.put("message", "指定時間に医師の空きがありません。");
+            return ResponseEntity.badRequest().body(response);
+        }
 
+        // 予約情報の更新
+        existingAppointment.setAppointmentTime(updatedAppointment.getAppointmentTime());
+        existingAppointment.setDoctor(updatedAppointment.getDoctor());
+        // 他に更新が必要なフィールドがあればここで設定
+
+        // 更新を保存
+        appointmentRepository.save(existingAppointment);
+
+        response.put("message", "予約が正常に更新されました。");
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * 予約をキャンセルするメソッド。
+     * - トークンから患者IDを取得し認証
+     * - 予約の存在確認
+     * - キャンセル権限（患者IDの一致）をチェック
+     * - 予約を削除
+     * @param appointmentId キャンセル対象の予約ID
+     * @param token 患者認証用トークン
+     * @return 処理結果メッセージを含むHTTPレスポンス
+     */
+    @Transactional
+    public ResponseEntity<Map<String, String>> cancelAppointment(Long appointmentId, String token) {
+        Map<String, String> response = new HashMap<>();
+
+        // トークンから患者IDを取得
+        Long patientId = tokenService.getPatientIdFromToken(token);
+        
+        if (patientId == null) {
+            response.put("error", "無効なトークンです。");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
+        }
+
+        // 予約の存在確認
+        Optional<Appointment> optionalAppointment = appointmentRepository.findById(appointmentId);
+        
+        if (optionalAppointment.isEmpty()) {
+            response.put("error", "予約が見つかりません。");
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+        }
+
+        Appointment appointment = optionalAppointment.get();
+
+        // キャンセル権限チェック（予約患者とトークン患者が同一か）
+        if (!appointment.getPatient().getId().equals(patientId)) {
+            response.put("error", "この予約をキャンセルする権限がありません。");
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response);
+        }
+
+        // 予約削除
+        appointmentRepository.delete(appointment);
+
+        response.put("message", "予約がキャンセルされました。");
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * 医師ID・日付・患者名（任意）に基づいて予約リストを取得するメソッド。
+     * - トークンの有効性を検証
+     * - 日付の開始～終了までの範囲で絞り込み
+     * - 患者名指定があれば部分一致検索
+     * @param doctorId 医師ID
+     * @param date 検索対象の日付
+     * @param patientName 検索に使う患者名（任意）
+     * @param token 認証トークン
+     * @return 予約リストを含むレスポンス
+     */
+    @Transactional(readOnly = true)
+    public ResponseEntity<Map<String, Object>> getAppointments(Long doctorId, LocalDate date, String patientName, String token) {
+    	
+        Map<String, Object> response = new HashMap<>();
+
+        // トークンの有効性チェック
+        if (!tokenService.isValidToken(token)) {
+            response.put("error", "無効なトークンです。");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
+        }
+
+        // 指定日の00:00～23:59:59.999を表すLocalDateTimeを作成
+        LocalDateTime startOfDay = date.atStartOfDay();
+        LocalDateTime endOfDay = date.atTime(LocalTime.MAX);
+
+        List<Appointment> appointments;
+        if (patientName != null && !patientName.isBlank()) {
+            // 患者名部分一致で絞り込み
+            appointments = appointmentRepository.findByDoctorIdAndPatientFullNameContainingIgnoreCaseAndAppointmentTimeBetween(
+                    doctorId, patientName, startOfDay, endOfDay);
+        } else {
+            // 患者名指定なしの場合
+            appointments = appointmentRepository.findByDoctorIdAndAppointmentTimeBetween(
+                    doctorId, startOfDay, endOfDay);
+        }
+
+        response.put("appointments", appointments);
+        return ResponseEntity.ok(response);
+    }
+    
+    
+    /**
+     * 予約ステータスを更新するユーティリティ.
+     *
+     * <pre>
+     * ・存在チェックのみ行い、見つからなければ何もしない
+     * ・更新系なので @Transactional を付与
+     * ・内部エラーは WARN ログに残すだけ（呼び出し元では握りつぶす想定）
+     * </pre>
+     *
+     * @param appointmentId 更新対象の予約 ID
+     * @param newStatus     新しいステータス値
+     */
+    @Transactional
+    public void changeStatus(Long appointmentId, int newStatus) {
+
+        // 1) レコード存在確認
+        if (!appointmentRepository.existsById(appointmentId)) {
+            log.warn("changeStatus: 指定 ID の予約が存在しません -> id={}", appointmentId);
+            return;                                     // 何もしない
+        }
+
+        try {
+            // 2) ステータス更新（リポジトリの@Modifying JPQL を利用）
+            appointmentRepository.updateStatus(newStatus, appointmentId);
+            log.info("予約ID={} のステータスを {} に更新しました。", appointmentId, newStatus);
+
+        } catch (Exception e) {
+            // 3) 例外が出ても Prescription 登録自体は失敗させたくないため WARN で記録
+            log.warn("予約ステータス更新に失敗しました。id={}, status={}, cause={}",
+                      appointmentId, newStatus, e.toString());
+        }
+    }
+    
 }

@@ -1,3 +1,241 @@
+/* doctorDashboard.css - doctorDashboard.html構造対応 完全版 */
+
+/* 1. ベースリセット */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  height: 100%;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: #f5f5f5;
+  color: #015c5d;
+}
+
+/* 2. コンテナ・ラッパー構造 */
+.container {
+  width: 100%;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  background-color: #f5f5f5;
+  padding: 20px 0;
+}
+
+.wrapper {
+  width: 95%;
+  max-width: 1200px;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* 3. メインコンテンツ */
+.main-content {
+  flex-grow: 1;
+  padding: 20px 30px;
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* 4. 検索バー */
+#searchBar {
+  width: 100%;
+  max-width: 400px;
+  padding: 10px 15px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  font-size: 16px;
+  color: #015c5d;
+  transition: border-color 0.3s ease;
+}
+
+#searchBar:focus {
+  outline: none;
+  border-color: #015c5d;
+}
+
+/* 5. フィルターコントロール */
+.filter-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+#todayButton {
+  background-color: #2000b0;
+  color: #fff;
+  border: none;
+  padding: 10px 22px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 14px;
+  transition: background-color 0.3s ease;
+  user-select: none;
+}
+
+#todayButton:hover {
+  background-color: #171efa;
+}
+
+#datePicker {
+  padding: 10px;
+  height: 34px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  font-size: 14px;
+  cursor: pointer;
+  transition: border-color 0.3s ease;
+  order-color: #015c5d;
+}
+
+#datePicker:focus {
+  outline: none;
+  border-color: #015c5d;
+}
+
+/* 6. テーブル */
+.patient-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: #fff;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.patient-table thead {
+  background-color: #015c5d;
+  color: #fff;
+  font-weight: 700;
+}
+
+.patient-table th,
+.patient-table td {
+  padding: 12px 16px;
+  text-align: center;
+  border-bottom: 1px solid #ddd;
+  vertical-align: middle;
+  font-size: 15px;
+}
+
+.patient-table tbody tr:nth-child(even) {
+  background-color: #f9f9f959;
+}
+
+.patient-table tbody tr:nth-child(odd) {
+  background-color: #ffffffc0;
+}
+
+.patient-table tbody tr:hover {
+  background-color: #015c5d39;
+  transition: background-color 0.3s ease;
+}
+
+/* 7. 処方箋ボタン */
+.prescription-btn {
+  width: 30px;
+  height: 30px;
+  border: none;
+  background-color: #015c5d;
+  color: #fff;
+  font-weight: 700;
+  font-size: 18px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  user-select: none;
+  transition: transform 0.2s ease, filter 0.2s ease;
+}
+
+.prescription-btn:hover {
+  transform: scale(1.1);
+  filter: brightness(1.2);
+}
+
+.prescription-btn:active {
+  transform: scale(0.95);
+}
+
+/* 8. 患者データなしメッセージ */
+.noPatientRecord {
+  font-style: italic;
+  font-size: 16px;
+  color: #777;
+  text-align: center;
+  padding: 30px 0;
+}
+
+/* 9. レスポンシブ対応 */
+@media (max-width: 768px) {
+  .main-content {
+    padding: 15px 20px;
+  }
+  #searchBar {
+    max-width: 100%;
+    font-size: 14px;
+  }
+  #todayButton {
+    padding: 8px 18px;
+    font-size: 13px;
+  }
+  #datePicker {
+    padding: 8px;
+    height: 32px;
+    font-size: 13px;
+  }
+  .patient-table th, .patient-table td {
+    font-size: 13px;
+    padding: 10px 12px;
+  }
+  .prescription-btn {
+    width: 26px;
+    height: 26px;
+    font-size: 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .main-content {
+    padding: 10px 15px;
+  }
+  #searchBar {
+    font-size: 13px;
+  }
+  #todayButton {
+    padding: 7px 14px;
+    font-size: 12px;
+  }
+  #datePicker {
+    padding: 7px;
+    height: 28px;
+    font-size: 12px;
+  }
+  .patient-table th, .patient-table td {
+    font-size: 12px;
+    padding: 8px 10px;
+  }
+  .prescription-btn {
+    width: 24px;
+    height: 24px;
+    font-size: 14px;
+  }
+}
+
+
+
+
 /* This is the style sheet for the doctorDashboard.html */
 /* 
 **Table Header (`.table-header`)**

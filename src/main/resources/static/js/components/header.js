@@ -1,3 +1,157 @@
+/**
+ * renderHeader - ヘッダーを動的に表示する関数
+ *
+ * ユーザーのログイン状態やロール情報に基づき、
+ * ページのヘッダー部分のHTMLを動的に生成・表示します。
+ * ログインしていない場合は簡易ヘッダーを表示し、
+ * ログイン状態に応じて各種ボタンを表示・イベント設定を行います。
+ */
+function renderHeader() {
+  // HTML内のid="header"を持つ要素を取得
+  const headerDiv = document.getElementById("header");
+
+  //---------------------------------------------------
+  // 非ログイン状態（または初期状態）のヘッダーに関する処理
+  //---------------------------------------------------
+
+  /**
+   * 現在のページのパスがルート("/")かどうか確認。
+   * ルートの場合はロール情報を削除してシンプルなヘッダーを描画。
+   */
+  if (window.location.pathname.endsWith("/")) {
+    localStorage.removeItem("userRole"); // セッション初期化
+    
+    headerDiv.innerHTML = `
+      <header class="header">
+        <div class="logo-section">
+          <img src="../assets/images/logo/logo.png" alt="Hospital CRM Logo" class="logo-img">
+          <span class="logo-title">Hospital CMS</span>
+        </div>
+      </header>`;
+    return; // 関数終了
+  }
+
+  //-----------------------------------
+  // ログイン状態のヘッダーに関する処理
+  //-----------------------------------
+
+  // ローカルストレージからユーザーのロールとトークンを取得
+  const role = localStorage.getItem("userRole");
+  const token = localStorage.getItem("token");
+
+  // ヘッダーの基本HTML（ロゴ部分）
+  let headerContent = `<header class="header">
+    <div class="logo-section">
+      <img src="../assets/images/logo/logo.png" alt="Hospital CRM Logo" class="logo-img">
+      <span class="logo-title">Hospital CMS</span>
+    </div>
+    <nav>`;
+
+  /**
+   * ロールは存在するがトークンが無い場合はセッション切れと判断し、
+   * ログアウト処理を行ってトップページへリダイレクト。
+   */
+  if ((role === "loggedPatient" || role === "admin" || role === "doctor") && !token) {
+    localStorage.removeItem("userRole");
+    alert("セッションの有効期限が切れたか、無効なログインです。再度ログインしてください。");
+    window.location.href = "/";
+    return;
+  }
+
+  /**
+   * ロールに応じてヘッダー内に表示するボタンなどを動的に追加。
+   * - admin: 「Add Doctor」ボタンとログアウトリンク
+   * - doctor: 「Home」ボタンとログアウトリンク
+   * - patient: 「Login」「Sign Up」ボタン
+   * - loggedPatient: 「Home」「Appointments」「Logout」ボタン
+   */
+  if (role === "admin") {
+    headerContent += `
+      <button id="addDocBtn" class="adminBtn" onclick="openModal('addDoctor')">Add Doctor</button>
+      <a href="#" onclick="logout()">Logout</a>`;
+  } else if (role === "doctor") {
+    headerContent += `
+      <button class="adminBtn" onclick="selectRole('doctor')">Home</button>
+      <a href="#" onclick="logout()">Logout</a>`;
+  } else if (role === "patient") {
+    headerContent += `
+      <button id="patientLogin" class="adminBtn">Login</button>
+      <button id="patientSignup" class="adminBtn">Sign Up</button>`;
+  } else if (role === "loggedPatient") {
+    headerContent += `
+      <button id="home" class="adminBtn" onclick="window.location.href='/pages/loggedPatientDashboard.html'">Home</button>
+      <button id="patientAppointments" class="adminBtn" onclick="window.location.href='/pages/patientAppointments.html'">Appointments</button>
+      <a href="#" onclick="logoutPatient()">Logout</a>`;
+  }
+
+  // ナビゲーション終了タグとヘッダー閉じタグを追加
+  headerContent += `</nav></header>`;
+
+  // 動的に作成したヘッダーHTMLをDOMに挿入
+  headerDiv.innerHTML = headerContent;
+
+  // 各ボタンにイベントリスナーを設定する補助関数を呼び出し
+  attachHeaderButtonListeners();
+}
+
+
+/**
+ * attachHeaderButtonListeners - ヘッダーボタンのイベントリスナーを設定
+ *
+ * ログイン・サインアップボタンが存在する場合、
+ * クリック時に対応するモーダルを開くイベントを設定します。
+ */
+function attachHeaderButtonListeners() {
+  const patientLoginBtn = document.getElementById("patientLogin");
+  const patientSignupBtn = document.getElementById("patientSignup");
+
+  if (patientLoginBtn) {
+    patientLoginBtn.addEventListener("click", () => {
+      openModal("patientLogin");
+    });
+  }
+
+  if (patientSignupBtn) {
+    patientSignupBtn.addEventListener("click", () => {
+      openModal("patientSignup");
+    });
+  }
+}
+
+/**
+ * logout - ログアウト処理
+ *
+ * ユーザーのロールとトークンをlocalStorageから削除し、
+ * トップページにリダイレクトします。
+ */
+function logout() {
+  localStorage.removeItem("userRole");
+  localStorage.removeItem("token");
+  window.location.href = "/";
+}
+
+/**
+ * logoutPatient - ログイン済み患者のログアウト処理
+ *
+ * ログアウト後に患者用ダッシュボードへリダイレクトします。
+ */
+function logoutPatient() {
+  localStorage.removeItem("userRole");
+  localStorage.removeItem("token");
+  window.location.href = "/";
+}
+
+// ページ読み込み時にヘッダー初期化を実行
+renderHeader();
+
+
+
+
+
+
+
+
+
 /*
   Step-by-Step Explanation of Header Section Rendering
 

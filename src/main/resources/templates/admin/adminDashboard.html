@@ -1,3 +1,86 @@
+<!DOCTYPE html>
+<!-- HTML5宣言：モダンブラウザの互換性を確保 -->
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <!-- ブラウザのタブに表示されるタイトル -->
+    <title>Admin Dashboard</title>
+
+    <!-- ファビコン設定（ブラウザのタブに表示されるアイコン） -->
+    <link rel="icon" type="image/png" th:href="@{/assets/images/logo/logo.png}" />
+
+    <!-- スタイルシート読み込み -->
+    <link rel="stylesheet" th:href="@{/assets/css/adminDashboard.css}" />
+    <link rel="stylesheet" th:href="@{/css/style.css}" />
+
+    <!-- JavaScriptファイルの読み込み（deferで非同期実行） -->
+    <script th:src="@{/js/render.js}" defer></script>
+    <script th:src="@{/js/util.js}" defer></script>
+    <script th:src="@{/js/header.js}" defer></script>
+    <script th:src="@{/js/footer.js}" defer></script>
+</head>
+
+<!-- ページ読み込み時にrenderContent()関数を実行 -->
+<body onload="renderContent()">
+    <div class="container">
+        <div class="wrapper">
+
+            <!-- ヘッダー領域（JavaScriptで動的に読み込まれる） -->
+            <div id="header"></div>
+
+            <!-- メインコンテンツ -->
+            <main class="main-content">
+
+                <!-- 医師検索バー -->
+                <input type="text" id="searchBar" placeholder="医師を検索..." />
+
+                <!-- フィルター機能 -->
+                <div class="filters">
+                    <!-- 時間帯で絞り込み（午前/午後） -->
+                    <select id="timeFilter">
+                        <option value="">全ての時間帯</option>
+                        <option value="AM">午前</option>
+                        <option value="PM">午後</option>
+                    </select>
+
+                    <!-- 診療科目で絞り込み -->
+                    <select id="specialtyFilter">
+                        <option value="">全ての診療科目</option>
+                        <option value="Cardiologist">循環器科</option>
+                        <option value="Dentist">歯科</option>
+                        <option value="Dermatologist">皮膚科</option>
+                        <option value="General">一般内科</option>
+                    </select>
+                </div>
+
+                <!-- 医師カードなどを表示する領域（JavaScriptで動的に追加） -->
+                <div id="content"></div>
+            </main>
+
+            <!-- フッター領域（JavaScriptで動的に読み込まれる） -->
+            <div id="footer"></div>
+        </div>
+    </div>
+
+    <!-- モーダル（ポップアップ） -->
+    <div id="modal" class="modal">
+        <div class="modal-content">
+            <!-- 閉じるボタン（×） -->
+            <span class="close" onclick="document.getElementById('modal').style.display='none'">&times;</span>
+            <!-- モーダルの内容領域 -->
+            <div id="modal-body"></div>
+        </div>
+    </div>
+
+    <!-- このページ専用のJavaScriptモジュールを読み込む -->
+    <script type="module" th:src="@{/js/adminDashboard.js}" defer></script>
+    <script type="module" th:src="@{/js/doctorCard.js}" defer></script>
+</body>
+</html>
+
+
+
+
 <!-- adminDashboard.html -->
 
 <!-- 

@@ -1,3 +1,63 @@
+// ページにフッターを描画する関数
+function renderFooter() {
+  // HTML内のid="footer"の要素を取得（ここにフッターを挿入する）
+  const footer = document.getElementById("footer");
+
+  // フッターのHTML内容を動的に挿入
+  footer.innerHTML = `
+    <footer class="footer">
+      <!-- フッター全体を囲むコンテナ -->
+      <div class="footer-container">
+
+        <!-- 病院のロゴと著作権表示 -->
+        <div class="footer-logo">
+          <!-- ロゴ画像。代替テキストで視覚障がい者にも配慮 -->
+          <img src="../assets/images/logo/logo.png" alt="病院CMSロゴ">
+          <!-- 著作権表示 -->
+          <p>© Copyright 2025. All Rights Reserved by Hospital CMS.</p>
+        </div>
+
+        <!-- フッターのリンクセクション -->
+        <div class="footer-links">
+
+          <!-- 会社情報に関するリンク -->
+          <div class="footer-column">
+            <h4>会社情報</h4>
+            <a href="#">会社概要</a>
+            <a href="#">採用情報</a>
+            <a href="#">報道関係</a>
+          </div>
+
+          <!-- サポートに関するリンク -->
+          <div class="footer-column">
+            <h4>サポート</h4>
+            <a href="#">アカウント</a>
+            <a href="#">ヘルプセンター</a>
+            <a href="#">お問い合わせ</a>
+          </div>
+
+          <!-- 法的情報に関するリンク -->
+          <div class="footer-column">
+            <h4>法的情報</h4>
+            <a href="#">利用規約</a>
+            <a href="#">プライバシーポリシー</a>
+            <a href="#">ライセンス情報</a>
+          </div>
+
+        </div> <!-- .footer-links 終了 -->
+      </div> <!-- .footer-container 終了 -->
+    </footer>
+  `;
+}
+
+// 関数を呼び出して、ページ読み込み時にフッターを挿入
+renderFooter();
+
+
+
+
+
+
 /*
   Function to render the footer content into the page
       Select the footer element from the DOM
