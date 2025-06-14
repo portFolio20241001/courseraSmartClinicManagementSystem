@@ -1,9 +1,10 @@
 package com.project.back_end.controllers;
 
+import java.security.Provider.Service;
 import java.util.Map;
 
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -12,9 +13,13 @@ import org.springframework.web.bind.annotation.RestController;
 import com.project.back_end.DTO.Login;
 import com.project.back_end.Entity.Admin;
 import com.project.back_end.Entity.User;
-
 import com.project.back_end.services.CommonService;        // 共通ロジックをまとめたサービス
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -65,9 +70,129 @@ public class AdminController {
      *   <li><b>その他エラー</b> : HTTP&nbsp;500 + body = {"error":"Internal server error"}</li>
      * </ul>
      *
+     
+     
+     
+     @Operation(
+    summary     = "管理者ログイン",
+    description = "ユーザー名とパスワードで認証し、成功時に JWT を返します。",
+    requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
+        required    = true,
+        description = "管理者のログイン情報（username / password）",
+        content     = @Content(
+            mediaType = MediaType.APPLICATION_JSON_VALUE,
+            schema    = @Schema(implementation = Login.class),
+            examples  = @ExampleObject(
+                name    = "AdminLoginSample",
+                summary = "adminUser1 でログイン",
+                value   = """
+                    {
+                      "username": "adminUser1",
+                      "password": "adminPassPlain"
+                    }"""
+            )
+        )
+    ),
+    responses = {
+        @ApiResponse(
+            responseCode = "200",
+            description  = "認証成功",
+            content      = @Content(
+                mediaType = MediaType.APPLICATION_JSON_VALUE,
+                schema    = @Schema(
+                    type    = "object",
+                    example = """
+                      {
+                        "token"  : "eyJhbGciOiJIUzI1NiJ9.adminTokenSig",
+                        "message": "ログインに成功しました。"
+                      }"""
+                )
+            )
+        ),
+        @ApiResponse(
+            responseCode = "401",
+            description  = "ユーザー名またはパスワード不一致",
+            content      = @Content(
+                mediaType = MediaType.APPLICATION_JSON_VALUE,
+                schema    = @Schema(
+                    example = "{\"error\":\"ユーザー名が存在しません。\"}"
+                )
+            )
+        ),
+        @ApiResponse(
+            responseCode = "500",
+            description  = "内部サーバエラー",
+            content      = @Content(
+                mediaType = MediaType.APPLICATION_JSON_VALUE,
+                schema    = @Schema(
+                    example = "{\"error\":\"内部エラーが発生しました。\"}"
+                )
+            )
+        )
+    }
+)
      * @param receivedAdmin リクエストボディで送られてくる管理者のユーザー名・パスワード
      * @return 認証結果（トークン or エラーメッセージ）を格納した {@link ResponseEntity}
      */
+    
+    @Operation(
+    	    summary     = "管理者ログイン",
+    	    description = "ユーザー名とパスワードで認証し、成功時に JWT を返します。",
+    	    requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
+    	        required    = true,
+    	        description = "管理者のログイン情報（username / password）",
+    	        content     = @Content(
+    	            mediaType = MediaType.APPLICATION_JSON_VALUE,
+    	            schema    = @Schema(implementation = Login.class),
+    	            examples  = @ExampleObject(
+    	                name    = "AdminLoginSample",
+    	                summary = "adminUser1 でログイン",
+    	                value   = """
+    	                    {
+    	                      "username": "adminUser1",
+    	                      "password": "adminPassPlain"
+    	                    }"""
+    	            )
+    	        )
+    	    ),
+    	    responses = {
+    	        @ApiResponse(
+    	            responseCode = "200",
+    	            description  = "認証成功",
+    	            content      = @Content(
+    	                mediaType = MediaType.APPLICATION_JSON_VALUE,
+    	                schema    = @Schema(
+    	                    type    = "object",
+    	                    example = """
+    	                      {
+    	                        "token"  : "eyJhbGciOiJIUzI1NiJ9.adminTokenSig",
+    	                        "message": "ログインに成功しました。"
+    	                      }"""
+    	                )
+    	            )
+    	        ),
+    	        @ApiResponse(
+    	            responseCode = "401",
+    	            description  = "ユーザー名またはパスワード不一致",
+    	            content      = @Content(
+    	                mediaType = MediaType.APPLICATION_JSON_VALUE,
+    	                schema    = @Schema(
+    	                    example = "{\"error\":\"ユーザー名が存在しません。\"}"
+    	                )
+    	            )
+    	        ),
+    	        @ApiResponse(
+    	            responseCode = "500",
+    	            description  = "内部サーバエラー",
+    	            content      = @Content(
+    	                mediaType = MediaType.APPLICATION_JSON_VALUE,
+    	                schema    = @Schema(
+    	                    example = "{\"error\":\"内部エラーが発生しました。\"}"
+    	                )
+    	            )
+    	        )
+    	    }
+    	)
     @PostMapping("/login")
     public ResponseEntity<Map<String, String>> adminLogin(@Valid @RequestBody Login Login) {
     	

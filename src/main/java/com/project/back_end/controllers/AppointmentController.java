@@ -6,6 +6,7 @@ import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -20,6 +21,12 @@ import com.project.back_end.Entity.Appointment;
 import com.project.back_end.services.AppointmentService;
 import com.project.back_end.services.CommonService;  // ★共通バリデーション用サービス
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import jakarta.validation.Valid;
 
 /**
@@ -57,11 +64,62 @@ public class AppointmentController {
         this.commonService            = service;
     }
 
-    // ------------------------------------------------------------------
-    // ① 予約一覧取得（医師）
-    //    GET /appointments/{doctorId}/{date}/{patientName}/{token}
-    // ------------------------------------------------------------------
-
+    /* ====================================================================
+     * ① 予約一覧取得（医師）
+     * ===================================================================*/
+    @Operation(
+        summary     = "医師の予約一覧取得 (by Doctor)",
+        description = "指定日と患者名（部分一致可）で、医師が持つ予約を取得します。",
+        parameters  = {
+            @Parameter(name = "doctorId", description = "医師 ID", example = "2"),
+            @Parameter(name = "date",     description = "検索対象日 (yyyy-MM-dd)", example = "2025-09-11"),
+            @Parameter(name = "patientName", description = "患者名（部分一致）例: \"松本\"", example = "松本"),
+            @Parameter(name = "token",    description = "Doctor ログイントークン", example = "eyJhbGciOiJIUzI1NiJ9.doctorTokenSig")
+        },
+        responses = {
+            @ApiResponse(
+                responseCode = "200",
+                description  = "検索成功",
+                content      = @Content(
+                    mediaType = MediaType.APPLICATION_JSON_VALUE,
+                    examples  = @ExampleObject(
+                        name    = "Success",
+                        summary = "検索結果例",
+                        value   = """
+                        {
+                          "appointments": [
+                            {
+                              "id": 1,
+                              "doctor": { "id": 2 },
+                              "patient": { "id": 12 },
+                              "appointmentTime": "2025-09-11T09:00:00",
+                              "status": 0
+                            },
+                            {
+                              "id": 4,
+                              "doctor": { "id": 2 },
+                              "patient": { "id": 15 },
+                              "appointmentTime": "2025-09-11T14:00:00",
+                              "status": 1
+                            }
+                          ]
+                        }
+                        """
+                    )
+                )
+            ),
+            @ApiResponse(
+                responseCode = "401",
+                description  = "トークン無効／期限切れ",
+                content      = @Content(
+                    mediaType = MediaType.APPLICATION_JSON_VALUE,
+                    examples  = @ExampleObject(value = """
+                    { "error": "トークンが無効または期限切れです。" }
+                    """)
+                )
+            )
+        }
+    )
     /**
      * 指定日・患者名で医師の予約を検索して返却する。  
      * <p>トークンは <b>doctor</b> ロールとして検証される。</p>
@@ -95,10 +153,58 @@ public class AppointmentController {
 
     }
 
-    // ------------------------------------------------------------------
-    // ② 予約作成（患者）
-    // ------------------------------------------------------------------
-
+    /* =====================================================================
+     * ② 予約作成（患者）
+     * ===================================================================*/
+    @Operation(
+        summary     = "新規予約作成 (by Patient)",
+        description = "患者が医師の空き時間に予約を入れます。",
+        parameters  = @Parameter(
+            name        = "token",
+            description = "Patient ログイントークン",
+            example     = "eyJhbGciOiJIUzI1NiJ9.patientTokenSig"
+        ),
+        requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
+            required = true,
+            description = "予約内容",
+            content = @Content(
+                mediaType = MediaType.APPLICATION_JSON_VALUE,
+                schema    = @Schema(implementation = Appointment.class),
+                examples  = @ExampleObject(
+                    name   = "予約作成例",
+                    value  = """
+                    {
+                      "doctor":   { "id": 2 },
+                      "patient":  { "id": 12 },
+                      "appointmentTime": "2025-09-11T09:00:00",
+                      "status": 0
+                    }
+                    """
+                )
+            )
+        ),
+        responses = {
+            @ApiResponse(
+                responseCode = "201",
+                description  = "予約作成成功",
+                content      = @Content(
+                    mediaType = MediaType.APPLICATION_JSON_VALUE,
+                    examples  = @ExampleObject(value = """
+                    { "message": "予約が正常に登録されました。" }
+                    """)
+                )
+            ),
+            @ApiResponse(
+                responseCode = "400",
+                description  = "バリデーションエラー / 医師不在",
+                content      = @Content(
+                    examples = @ExampleObject(value = """
+                    { "message": "指定時間はすでに予約済み、または医師が不在です。" }
+                    """)
+                )
+            )
+        }
+    )
     /**
      * 新規予約を作成する。
      *
@@ -136,9 +242,46 @@ public class AppointmentController {
         return appointmentService.bookAppointment(appointment);
     }
 
-    // ------------------------------------------------------------------
-    // ③ 予約更新（患者）
-    // ------------------------------------------------------------------
+    /* =====================================================================
+     * ③ 予約更新（患者）
+     * ===================================================================*/
+    @Operation(
+        summary     = "予約更新 (by Patient)",
+        description = "患者自身の既存予約を変更します。",
+        parameters  = @Parameter(
+            name        = "token",
+            description = "Patient ログイントークン",
+            example     = "eyJhbGciOiJIUzI1NiJ9.patientTokenSig"
+        ),
+        requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
+            required = true,
+            description = "更新内容（ID 必須）",
+            content = @Content(
+                schema   = @Schema(implementation = Appointment.class),
+                examples = @ExampleObject(
+                    name  = "更新例",
+                    value = """
+                    {
+                      "id": 1,
+                      "doctor":   { "id": 2 },
+                      "patient":  { "id": 12 },
+                      "appointmentTime": "2025-09-11T11:00:00",
+                      "status": 0
+                    }
+                    """
+                )
+            )
+        ),
+        responses = @ApiResponse(
+            responseCode = "200",
+            description  = "更新成功",
+            content      = @Content(
+                examples = @ExampleObject(value = """
+                { "message": "予約が正常に更新されました。" }
+                """)
+            )
+        )
+    )
 
     /**
      * 既存予約を更新する。
@@ -162,9 +305,37 @@ public class AppointmentController {
         return appointmentService.updateAppointment(appointment);
     }
 
-    // ------------------------------------------------------------------
-    // ④ 予約キャンセル（患者）
-    // ------------------------------------------------------------------
+    /* =====================================================================
+     * ④ 予約キャンセル（患者）
+     * ===================================================================*/
+    @Operation(
+        summary     = "予約キャンセル (by Patient)",
+        description = "患者が自身の予約をキャンセルします。",
+        parameters  = {
+            @Parameter(name = "id",    description = "キャンセルする予約 ID", example = "1"),
+            @Parameter(name = "token", description = "Patient ログイントークン", example = "eyJhbGciOiJIUzI1NiJ9.patientTokenSig")
+        },
+        responses   = {
+            @ApiResponse(
+                responseCode = "200",
+                description  = "キャンセル成功",
+                content      = @Content(
+                    examples = @ExampleObject(value = """
+                    { "message": "予約がキャンセルされました。" }
+                    """)
+                )
+            ),
+            @ApiResponse(
+                responseCode = "404",
+                description  = "予約が存在しない",
+                content      = @Content(
+                    examples = @ExampleObject(value = """
+                    { "error": "予約が見つかりません。" }
+                    """)
+                )
+            )
+        }
+    )
 
     /**
      * 予約をキャンセルする。

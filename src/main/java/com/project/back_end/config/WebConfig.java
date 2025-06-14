@@ -28,7 +28,7 @@ public class WebConfig implements WebMvcConfigurer {
     }
 
     /* =========================
-     * 2. PasswordEncoder Bean   ← ★ここを追加
+     * 2. PasswordEncoder Bean   
      * ========================= */
     /**
      * アプリ全体で使用する {@link PasswordEncoder} を DI コンテナへ登録する。  
