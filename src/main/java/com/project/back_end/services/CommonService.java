@@ -2,6 +2,7 @@ package com.project.back_end.services;
 
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -74,17 +75,14 @@ public class CommonService {
      * @param userRole トークンを検証したいロール（"admin" / "doctor" / "patient" 等）
      * @return 無効・期限切れの場合は 401、問題なければ 200
      */
-    public ResponseEntity<Map<String, String>> validateToken(String token, String userRole) {
+    public Optional<String> validateToken(String token, String userRole) {
 
-        Map<String, String> body = new HashMap<>();
-
-        if (!tokenService.validateToken(token, userRole)) {
-            body.put("error", "トークンが無効または期限切れです。");
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(body);
+    	if (!tokenService.validateToken(token, userRole)) {
+            return Optional.of("トークンが無効です");
         }
-
-        body.put("message", "トークンは有効です。");
-        return ResponseEntity.ok(body);
+        
+    	return Optional.empty();
+        
     }
     
     
@@ -112,18 +110,22 @@ public class CommonService {
      * @return 成功時 : 200 + token / 失敗時 : 401 or 500
      */
     public ResponseEntity<Map<String, String>> validateAdmin(Admin receivedAdmin) {
+    	
+    	System.out.println("CommonService 管理者ログインの検証開始");
 
         Map<String, String> body = new HashMap<>();
 
         try {
             /* 1️⃣  ユーザ名で管理者を検索（User.username で一意） */
-            Admin stored = adminRepository
-                           .findByUser_Username(receivedAdmin.getUser().getUsername());
+        	Optional<Admin> optionalAdmin = adminRepository
+                    .findByUser_Username(receivedAdmin.getUser().getUsername());
 
-            if (stored == null) {
-                body.put("error", "ユーザー名が存在しません。");
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(body);
-            }
+			if (optionalAdmin.isEmpty()) {
+				body.put("error", "ユーザー名が存在しません。");
+				return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(body);
+			}
+			
+			Admin stored = optionalAdmin.get();  // この時点で null ではない
 
             /* 2️⃣  パスワードハッシュを照合
                    - フロントから受信した平文パスワードと、DB に保存済みのハッシュPWを比較          */
@@ -138,6 +140,7 @@ public class CommonService {
 
             /* 3️⃣  認証成功 → JWT 発行 */
             String token = tokenService.generateToken(stored.getUser().getUsername());
+            
             body.put("token", token);
             body.put("message", "ログインに成功しました。");
 
@@ -198,7 +201,7 @@ public class CommonService {
     
     
     /* -------------------------------------------------------------------------
-     * 4.  予約日時の重複チェック
+     * 4.  予約可能チェック（日時の重複チェック
      * ---------------------------------------------------------------------- */
 
     /**
@@ -212,21 +215,47 @@ public class CommonService {
 
         Long doctorId = appointment.getDoctor().getId();
         Optional<Doctor> opt = doctorRepository.findById(doctorId);
-
+        
+        //　そもそも指定した医師がいなけば-1を返す
         if (opt.isEmpty()) return -1;
+        
+        Doctor realDoctor = opt.get();
+        LocalDateTime targetTime = appointment.getAppointmentTime();
+        
+        // ①DoctorのavailableTimes にその指定の時間が含まれているか？
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+
+        boolean isAvailable = realDoctor.getAvailableTimes()
+            .stream()
+            .anyMatch(t -> LocalDateTime.parse(t, formatter).equals(targetTime));
+        
+
+        System.out.println("availableTimesチェック");
+        System.out.println("isAvailable:"+isAvailable);
+
+        
+        
+        //　含まれていなけばその時間に指定の医師は空いていないってことで-1を返す
+        if (!isAvailable) return 0;
 
         // 予約日の 00:00:00〜23:59:59 を算出
         LocalDateTime start = appointment.getAppointmentTime().toLocalDate().atStartOfDay();
         LocalDateTime end   = appointment.getAppointmentTime().toLocalDate().atTime(LocalTime.MAX);
 
-        // 既に同じ日時で予約が入っていないか確認
+        // ②対象のDoctorに対して、既に同じ日時で予約が入っていないか確認
         List<Appointment> exists = appointmentRepository
                 .findByDoctorIdAndAppointmentTimeBetween(doctorId, start, end)
                 .stream()
                 .filter(a -> a.getAppointmentTime().isEqual(appointment.getAppointmentTime()))
                 .toList();
+        
+        System.out.println("appointment重複チェック");
+        System.out.println("exists: " + exists);
 
         return exists.isEmpty() ? 1 : 0;
+        
+        
+        
     }
 
     /* -------------------------------------------------------------------------
@@ -234,7 +263,7 @@ public class CommonService {
      * ---------------------------------------------------------------------- */
 
     /**
-     * メールアドレスまたは電話番号の重複登録を防止。
+     * ユーザ名または電話番号の重複登録を防止。
      *
      * @param patient 患者エンティティ
      * @return true:登録可 / false:既に存在
@@ -270,13 +299,23 @@ public class CommonService {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(body);
         }
 
-        if (!stored.getUser().getPasswordHash().equals(login.getPassword())) {
+        /* 2. パスワード検証  */
+        if (!passwordEncoder.matches(
+        							 login.getPassword(),									//平文PW
+        							 stored.getUser().getPasswordHash())) {		//ハッシュPW
+        	
             body.put("error", "パスワードが一致しません。");
+            
+            System.out.println("login.getPassword():" + "[" + login.getPassword() + "]");
+            System.out.println("patient.getUser().getPasswordHash():" + stored.getUser().getPasswordHash());
+
+            
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(body);
         }
 
         String token = tokenService.generateToken(login.getUsername());
         body.put("token", token);
+        body.put("message", "ログインに成功しました。");
         
         return ResponseEntity.ok(body);
         
@@ -297,11 +336,17 @@ public class CommonService {
     public ResponseEntity<Map<String, Object>> filterPatient(String condition,
                                                              String doctorName,
                                                              String token) {
-
+    	
+    	System.out.println("condition:"+condition);
+    	System.out.println("doctorName:"+doctorName);
+    	System.out.println("token:"+token);
+    	
+    	
         Map<String, Object> body = new HashMap<>();
 
         // トークンから username を抽出
         String username = tokenService.extractUsername(token);
+        
         if (username == null) {
             body.put("error", "トークンが無効です。");
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(body);
@@ -314,21 +359,42 @@ public class CommonService {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(body);
         }
         Long patientId = opt.get().getId();
+        
+        
+        // 「文字列 "null"」は null として扱う
+        if ("null".equalsIgnoreCase(condition)) {
+            condition = null;
+        }
+        if ("null".equalsIgnoreCase(doctorName)) {
+            doctorName = null;
+        }
+        
 
         /* ------ 条件分岐して PatientService の既存ロジックを呼び出す ------ */
         ResponseEntity<?> result;
         if (condition != null && doctorName != null) {
+        	
+        	System.out.println("b");
+        	
             result = patientService.filterByDoctorAndCondition(doctorName, patientId, condition);
         } else if (condition != null) {
+        	System.out.println("bb");
+        	
             result = patientService.filterByCondition(condition, patientId);
         } else if (doctorName != null) {
+        	System.out.println("bbb");
+        	
             result = patientService.filterByDoctor(doctorName, patientId);
         } else {
+        	
+        	System.out.println("bbbb");
+        	
             result = patientService.getPatientAppointment(patientId);
         }
 
         // PatientService からの戻り値をそのままラップ
         body.put("data", result.getBody());
         return ResponseEntity.status(result.getStatusCode()).body(body);
+        
     }
 }

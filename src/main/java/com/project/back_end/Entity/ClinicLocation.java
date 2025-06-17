@@ -3,6 +3,8 @@ package com.project.back_end.Entity;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -30,6 +32,7 @@ import jakarta.validation.constraints.Size;
 
 
 
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 @Entity
 @Table(name = "clinic_locations")
 public class ClinicLocation {
@@ -86,5 +89,26 @@ public class ClinicLocation {
      */
     @OneToMany(mappedBy = "clinicLocation", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Doctor> doctors;
+
+    
+	public Integer getId() {
+		
+		return this.id;
+	}
+    
+	public String getName() {
+		
+		return this.name;
+	}
+	
+	public String getAddress() {
+		
+		return this.address;
+	}
+	
+	public String getPhone() {
+		
+		return this.phone;
+	}
     
 }

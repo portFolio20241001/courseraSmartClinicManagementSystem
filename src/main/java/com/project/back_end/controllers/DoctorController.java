@@ -2,13 +2,16 @@ package com.project.back_end.controllers;
 
 import java.time.LocalDate;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -65,7 +68,7 @@ public class DoctorController {
      * ===================================================================*/
     // SwaggerUI表示
     @Operation(
-            summary = "医師の空き時間を取得",
+            summary = "医師の空き時間を取得 (by Patient)",
             description = "指定した <b>doctorId</b> と <b>date</b> について、未予約の時間帯リストを返します。",
             parameters = {
                 @Parameter(
@@ -99,8 +102,20 @@ public class DoctorController {
                             }""")
                     )
                 ),
-                @ApiResponse(responseCode = "401", description = "トークン無効／期限切れ"),
-                @ApiResponse(responseCode = "404", description = "医師IDが存在しない")
+                @ApiResponse(
+        	            responseCode = "401",
+        	            description = "トークン無効",
+        	            content = @Content(
+        	                mediaType = "application/json",
+        	                examples = @ExampleObject(
+        	                    name = "無効トークン",
+        	                    value = """
+        	                        {
+        	                          "error": "トークンが無効です"
+        	                        }"""
+        	                )
+        	            )
+        	        )
             }
         )
     /**
@@ -116,21 +131,32 @@ public class DoctorController {
             @PathVariable Long doctorId,
             @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
             @PathVariable String token) {
-
+    	
+    	
+    	System.out.println("@GetMapping(\"/availability/{doctorId}/{date}/{token}\")開始");
+    	
         /* ---- ① トークン検証（patient）---- */
-        ResponseEntity<Map<String, String>> auth = commonService.validateToken(token, "patient");  
+    	Optional<String> hasError = commonService.validateToken(token, "patient");  
 
-        if (auth.getBody() != null && !auth.getBody().isEmpty()) {
+        System.out.println("ポイント1");
+        
+        if (hasError.isPresent()) {
             // 認証エラーをそのまま返す
-            return ResponseEntity.status(auth.getStatusCode())
-                                 .body(new HashMap<>(auth.getBody()));
+        	return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("error", hasError.get()));
         }
+        
+        System.out.println("① トークン検証（patient）通過");
 
         /* ---- ② 空き時間取得 ---- */
         Map<String, Object> body = new HashMap<>();
         
+        
+        body.put("message", "トークンは有効です。");
         body.put("availableTimes",
                  doctorService.getDoctorAvailability(doctorId, date));
+        
+        System.out.println("② トークン検証（patient）通過");
         
         return ResponseEntity.ok(body);
     }
@@ -173,6 +199,7 @@ public class DoctorController {
     )
 
     @GetMapping
+    @Transactional
     public ResponseEntity<Map<String, Object>> getDoctors() {
     	
     	log.info("★ GET /doctor  全医師取得リクエスト受信");
@@ -186,36 +213,81 @@ public class DoctorController {
      * 3) 医師登録（Admin）
      * ===================================================================*/
     @Operation(
-            summary = "医師登録（by Admin）",
-            description = "Admin が新しい医師を登録します。",
-            requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
-                required = true,
-                content = @Content(
-                    schema = @Schema(implementation = Doctor.class),
-                    examples = @ExampleObject(name = "doctorRequest", value = """
-                        {
-                          "specialty": "循環器内科",
-                          "phone": "080-1234-5678",
-                          "clinicLocation": { "id": 2 },
-                          "user": {
-                            "username": "doctorUser11",
-                            "passwordHash": "plainPassword",
-                            "fullName": "萩原 拓也"
-                          }
-                        }""")
-                )
-            ),
-            parameters = @Parameter(
-                name = "token",
-                description = "Admin の JWT トークン",
-                example = "eyJhbGciOiJIUzI1NiJ9.adminTokenSignature"
-            ),
-            responses = {
-                @ApiResponse(responseCode = "201", description = "登録成功"),
-                @ApiResponse(responseCode = "409", description = "重複ユーザーあり"),
-                @ApiResponse(responseCode = "401", description = "トークン無効")
-            }
-        )
+    	    summary = "医師登録（by Admin）",
+    	    description = "Admin が新しい医師を登録します。",
+    	    requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
+    	        required = true,
+    	        content = @Content(
+    	            schema = @Schema(implementation = Doctor.class),
+    	            examples = @ExampleObject(name = "doctorRequest", value = """
+    	                {
+    	                  "specialty": "小児科",
+    	                  "phone": "090-1234-5678",
+    	                  "clinicLocation": { "id": 1 },
+    	                  "availableTimes": [
+    	                    "2025-06-20 09:00-10:00",
+    	                    "2025-06-21 14:00-15:00"
+    	                  ],
+    	                  "user": {
+    	                    "username": "doctorUser11",
+    	                    "passwordHash": "docpass11",
+    	                    "role": "ROLE_DOCTOR",
+    	                    "fullName": "佐藤 太郎"
+    	                  }
+    	                }""")
+    	        )
+    	    ),
+    	    parameters = @Parameter(
+    	        name = "token",
+    	        description = "Admin の JWT トークン",
+    	        example = "eyJhbGciOiJIUzI1NiJ9.adminTokenSignature"
+    	    ),
+    	    responses = {
+    	        @ApiResponse(
+    	            responseCode = "201",
+    	            description = "登録成功",
+    	            content = @Content(
+    	                mediaType = "application/json",
+    	                examples = @ExampleObject(
+    	                    name = "登録成功",
+    	                    value = """
+    	                        {
+    	                          "message": "医師を登録しました。"
+    	                        }"""
+    	                )
+    	            )
+    	        ),
+    	        @ApiResponse(
+    	            responseCode = "409",
+    	            description = "重複ユーザーあり",
+    	            content = @Content(
+    	                mediaType = "application/json",
+    	                examples = @ExampleObject(
+    	                    name = "重複ユーザー",
+    	                    value = """
+    	                        {
+    	                          "error": "同じユーザー名の医師が既に存在します。"
+    	                        }"""
+    	                )
+    	            )
+    	        ),
+    	        @ApiResponse(
+    	            responseCode = "401",
+    	            description = "トークン無効",
+    	            content = @Content(
+    	                mediaType = "application/json",
+    	                examples = @ExampleObject(
+    	                    name = "無効トークン",
+    	                    value = """
+    	                        {
+    	                          "error": "トークンが無効です"
+    	                        }"""
+    	                )
+    	            )
+    	        )
+    	    }
+    	)
+
     @PostMapping("/{token}")
     public ResponseEntity<Map<String, String>> saveDoctor(
             @RequestBody @Valid Doctor doctor,
@@ -229,10 +301,14 @@ public class DoctorController {
 		 * 失敗時 ── body: {"error": "...メッセージ"} • status: 401 など
          * 
          * */
-        ResponseEntity<Map<String, String>> auth = commonService.validateToken(token, "admin");
+    	Optional<String> hasError = commonService.validateToken(token, "admin");  
+
+        System.out.println("ポイント1");
         
-        if (auth.getBody() != null && !auth.getBody().isEmpty()) {
-            return auth;
+        if (hasError.isPresent()) {
+            // 認証エラーをそのまま返す
+        	return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("error", hasError.get()));
         }
 
         /* ---- 登録処理 ---- */
@@ -249,6 +325,8 @@ public class DoctorController {
         }
 
         body.put("message", "医師を登録しました。");
+        
+        
         return ResponseEntity.status(HttpStatus.CREATED).body(body);
     }
 
@@ -256,35 +334,63 @@ public class DoctorController {
      * 4) 医師ログイン
      * ===================================================================*/
     @Operation(
-        summary = "医師ログイン",
-        description = "ユーザー名とパスワードでログインし、JWT トークンを取得します。",
-        requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
-            required = true,
-            content = @Content(
-                schema = @Schema(implementation = Login.class),
-                examples = @ExampleObject(value = """
-                    {
-                      "username": "doctorUser1",
-                      "password": "password123"
-                    }""")
-            )
-        ),
-        responses = {
-            @ApiResponse(
-                responseCode = "200",
-                description = "ログイン成功",
-                content = @Content(
-                    mediaType = MediaType.APPLICATION_JSON_VALUE,
-                    examples = @ExampleObject(value = """
-                        {
-                          "token": "eyJhbGciOiJIUzI1NiJ9.generatedToken",
-                          "message": "ログインに成功しました。"
-                        }""")
-                )
-            ),
-            @ApiResponse(responseCode = "401", description = "認証失敗")
-        }
-    )
+    	    summary = "医師ログイン",
+    	    description = "ユーザー名とパスワードでログインし、JWT トークンを取得します。",
+    	    requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
+    	        required = true,
+    	        content = @Content(
+    	            schema = @Schema(implementation = Login.class),
+    	            examples = @ExampleObject(
+    	                name = "ログイン例",
+    	                value = """
+    	                    {
+    	                      "username": "doctorUser1",
+    	                      "password": "password123"
+    	                    }"""
+    	            )
+    	        )
+    	    ),
+    	    responses = {
+    	        @ApiResponse(
+    	            responseCode = "200",
+    	            description = "ログイン成功",
+    	            content = @Content(
+    	                mediaType = MediaType.APPLICATION_JSON_VALUE,
+    	                examples = @ExampleObject(
+    	                    name = "成功例",
+    	                    value = """
+    	                        {
+    	                          "token": "eyJhbGciOiJIUzI1NiJ9.generatedToken",
+    	                          "message": "ログインに成功しました。"
+    	                        }"""
+    	                )
+    	            )
+    	        ),
+    	        @ApiResponse(
+    	        	    responseCode = "401",
+    	        	    description = "認証失敗（ユーザー名不一致 または パスワード不一致）",
+    	        	    content = @Content(
+    	        	        mediaType = MediaType.APPLICATION_JSON_VALUE,
+    	        	        examples = {
+    	        	            @ExampleObject(
+    	        	                name = "ユーザー名不一致",
+    	        	                value = """
+    	        	                    {
+    	        	                      "error": "ユーザー名が存在しません。"
+    	        	                    }"""
+    	        	            ),
+    	        	            @ExampleObject(
+    	        	                name = "パスワード不一致",
+    	        	                value = """
+    	        	                    {
+    	        	                      "error": "パスワードが一致しません。"
+    	        	                    }"""
+    	        	            )
+    	        	        }
+    	        	    )
+    	        	)
+    	        }
+    	)
     @PostMapping("/login")
     public ResponseEntity<Map<String, String>> doctorLogin(
             @RequestBody @Valid Login login) {
@@ -302,26 +408,36 @@ public class DoctorController {
     	    description = "Admin が医師情報（電話番号・専門分野・所属クリニックなど）を更新します。",
     	    parameters = {
     	        @Parameter(
-    	            name      = "token",
+    	            name = "token",
     	            description = "Admin の JWT",
-    	            example   = "eyJhbGciOiJIUzI1NiJ9.adminTokenSig"
+    	            example = "eyJhbGciOiJIUzI1NiJ9.adminTokenSig"
     	        )
     	    },
     	    requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
     	        required = true,
     	        content = @Content(
     	            mediaType = "application/json",
-    	            schema    = @Schema(implementation = Doctor.class),
-    	            examples  = @ExampleObject(
-    	                name        = "更新例",
-    	                summary     = "電話番号と専門を変更",
-    	                description = "id=2 の医師（鈴木 花子）の電話番号・専門分野を更新する例",
+    	            schema = @Schema(implementation = Doctor.class),
+    	            examples = @ExampleObject(
+    	                name = "更新例",
+    	                summary = "医師情報更新（id:28）",
+    	                description = "ID 28 の医師（佐藤 花子）の情報を更新する例",
     	                value = """
     	                {
-    	                  "id": 2,
-    	                  "phone": "080-1111-9999",
-    	                  "specialty": "循環器内科",
-    	                  "clinic": 1
+    	                  "id": 28,
+    	                  "specialty": "産婦人科",
+    	                  "phone": "090-1234-5678",
+    	                  "clinicLocation": { "id": 1 },
+    	                  "availableTimes": [
+    	                    "2025-06-20 09:00-10:00",
+    	                    "2025-06-21 14:00-15:00"
+    	                  ],
+    	                  "user": {
+    	                    "username": "doctorUser13",
+    	                    "passwordHash": "docpass13",
+    	                    "role": "ROLE_DOCTOR",
+    	                    "fullName": "佐藤 花子"
+    	                  }
     	                }
     	                """
     	            )
@@ -330,37 +446,56 @@ public class DoctorController {
     	    responses = {
     	        @ApiResponse(
     	            responseCode = "200",
-    	            description  = "更新成功",
-    	            content      = @Content(
+    	            description = "更新成功",
+    	            content = @Content(
     	                mediaType = "application/json",
-    	                examples  = @ExampleObject(
-    	                    name    = "成功レスポンス",
-    	                    value   = "{ \"message\": \"医師情報を更新しました。\" }"
+    	                examples = @ExampleObject(
+    	                    name = "成功レスポンス",
+    	                    value = "{ \"message\": \"医師情報を更新しました。\" }"
     	                )
     	            )
     	        ),
     	        @ApiResponse(
     	            responseCode = "404",
-    	            description  = "該当 ID が存在しない",
-    	            content      = @Content(
+    	            description = "該当 ID が存在しない",
+    	            content = @Content(
     	                mediaType = "application/json",
-    	                examples  = @ExampleObject(
-    	                    name  = "エラーレスポンス",
+    	                examples = @ExampleObject(
+    	                    name = "存在しないID",
     	                    value = "{ \"error\": \"指定 ID の医師は存在しません。\" }"
+    	                )
+    	            )
+    	        ),
+    	        @ApiResponse(
+    	            responseCode = "500",
+    	            description = "更新リクエストの異常（ID未指定など）",
+    	            content = @Content(
+    	                mediaType = "application/json",
+    	                examples = @ExampleObject(
+    	                    name = "ID未指定エラー",
+    	                    value = "{ \"error\": \"Doctor IDを更新するならIDがNULLはダメです。\" }"
     	                )
     	            )
     	        )
     	    }
     	)
+
     @PutMapping("/{token}")
     public ResponseEntity<Map<String, String>> updateDoctor(
             @RequestBody @Valid Doctor doctor,
             @PathVariable String token) {
 
-        ResponseEntity<Map<String, String>> auth = commonService.validateToken(token, "admin");
+    	Optional<String> hasError = commonService.validateToken(token, "admin");  
+
+    	System.out.println("username: " + doctor.getUser().getUsername());
+    	System.out.println("password: " + doctor.getUser().getPasswordHash());
+    	System.out.println("fullname: " + doctor.getUser().getFullName());
+    	System.out.println("role: " + doctor.getUser().getRole());
         
-        if (auth.getBody() != null && !auth.getBody().isEmpty()) {
-            return auth;
+        if (hasError.isPresent()) {
+            // 認証エラーをそのまま返す
+        	return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("error", hasError.get()));
         }
         
         return doctorService.updateDoctor(doctor);
@@ -370,22 +505,81 @@ public class DoctorController {
      * 6) 医師削除（Admin）
      * ===================================================================*/
     @Operation(
-            summary = "医師削除（by Admin）",
-            description = "Admin が医師レコードを削除します。",
-            parameters = {
-                @Parameter(name = "doctorId", example = "11"),
-                @Parameter(name = "token", example = "eyJhbGciOiJIUzI1NiJ9.adminTokenSig")
-            }
-        )
+    	    summary = "医師削除（by Admin）",
+    	    description = "Admin が医師レコードを削除します。",
+    	    parameters = {
+    	        @Parameter(
+    	            name = "doctorId",
+    	            description = "削除対象の医師ID",
+    	            example = "11"
+    	        ),
+    	        @Parameter(
+    	            name = "token",
+    	            description = "Admin の JWT トークン",
+    	            example = "eyJhbGciOiJIUzI1NiJ9.adminTokenSig"
+    	        )
+    	    },
+    	    responses = {
+    	        @ApiResponse(
+    	            responseCode = "200",
+    	            description = "削除成功",
+    	            content = @Content(
+    	                mediaType = MediaType.APPLICATION_JSON_VALUE,
+    	                examples = @ExampleObject(
+    	                    name = "削除成功",
+    	                    value = """
+    	                        {
+    	                          "message": "医師(および紐づく予定履歴)を削除しました。"
+    	                        }"""
+    	                )
+    	            )
+    	        ),
+    	        @ApiResponse(
+    	            responseCode = "404",
+    	            description = "該当IDの医師が存在しない",
+    	            content = @Content(
+    	                mediaType = MediaType.APPLICATION_JSON_VALUE,
+    	                examples = @ExampleObject(
+    	                    name = "医師IDなし",
+    	                    value = """
+    	                        {
+    	                          "error": "指定 ID の医師は存在しません。"
+    	                        }"""
+    	                )
+    	            )
+    	        ),
+    	        @ApiResponse(
+    	            responseCode = "401",
+    	            description = "認証失敗（トークン不正）",
+    	            content = @Content(
+    	                mediaType = MediaType.APPLICATION_JSON_VALUE,
+    	                examples = @ExampleObject(
+    	                    name = "不正トークン",
+    	                    value = """
+    	                        {
+    	                          "error": "トークンが無効です"
+    	                        }"""
+    	                )
+    	            )
+    	        )
+    	    }
+    	)
+
     @DeleteMapping("/{doctorId}/{token}")
     public ResponseEntity<Map<String, String>> deleteDoctor(
             @PathVariable Long doctorId,
             @PathVariable String token) {
 
-        ResponseEntity<Map<String, String>> auth = commonService.validateToken(token, "admin");
-        if (auth.getBody() != null && !auth.getBody().isEmpty()) {
-            return auth;
+    	Optional<String> hasError = commonService.validateToken(token, "admin");  
+
+        System.out.println("ポイント1");
+        
+        if (hasError.isPresent()) {
+            // 認証エラーをそのまま返す
+        	return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("error", hasError.get()));
         }
+        
         return doctorService.deleteDoctor(doctorId);
     }
 
@@ -466,8 +660,20 @@ public class DoctorController {
             @PathVariable String period) {
 
         Map<String, Object> body = new HashMap<>();
-        body.put("doctors",
-                 doctorService.filterDoctorsByNameSpecilityandTime(name, specialty, period));
+        
+        log.info("★ /filter/{name}/{specialty}/{period}開始");
+
+        System.out.println("name:" + name );
+        System.out.println("specialty:" + specialty );
+        System.out.println("period:" + period );
+        
+        
+        List<Doctor>doctorFilterList =  doctorService.filterDoctorsByNameSpecilityandTime(name, specialty, period);
+        
+        System.out.println("【Contoroller】doctorFilterList:"+ doctorFilterList);
+        
+        body.put("doctors",doctorFilterList );
+        
         return ResponseEntity.ok(body);
     }
 }

@@ -26,6 +26,8 @@ public class AppointmentDTO {
     // 患者ID（Patientオブジェクトの代わりにIDを持つ）
 	@NotNull(message = "患者IDは必須です。")
     private Long patientId;
+	
+	private String patientName;
 
     // 診察予約の日時（開始時間）
     @NotNull(message = "予約日時は必須です。")
@@ -45,6 +47,7 @@ public class AppointmentDTO {
 	    this.id = appointment.getId(); // 予約IDを設定
 	    this.doctorId = appointment.getDoctor().getId(); // 医師IDを設定（DoctorエンティティのIDを取得）
 	    this.patientId = appointment.getPatient().getId(); // 患者IDを設定（PatientエンティティのIDを取得）
+	    this.patientName = appointment.getPatient().getUser().getFullName();  // 明示的に参照
 	    this.appointmentTime = appointment.getAppointmentTime();	// 予約日時（開始時間）を設定
 
 	    // ステータスを設定（0: 予約済み, 1: 完了, 2: キャンセル）

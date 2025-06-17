@@ -7,15 +7,17 @@ import java.util.stream.Collectors;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.project.back_end.DTO.AppointmentDTO;
 import com.project.back_end.Entity.Appointment;
 import com.project.back_end.Entity.Patient;
+import com.project.back_end.Entity.User;
 import com.project.back_end.repo.AppointmentRepository;
 import com.project.back_end.repo.PatientRepository;
 
-import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -30,6 +32,8 @@ public class PatientService {
     private final PatientRepository patientRepository;
     private final AppointmentRepository appointmentRepository;
     private final TokenService tokenService;
+    
+    private final PasswordEncoder passwordEncoder;   // ★ パスワードハッシュ比較用
 
 
     /* =====================================================================
@@ -45,12 +49,30 @@ public class PatientService {
      *   500 … {"error":   "..."}
      * </pre>
      */
-    @Transactional                  // データ更新なので readOnly=false
+    @Transactional
     public ResponseEntity<Map<String, String>> createPatient(Patient patient) {
 
         Map<String, String> body = new HashMap<>();
 
         try {
+            // ユーザー名の重複チェック
+            if (patientRepository.existsByUser_Username(patient.getUser().getUsername())) {
+                body.put("error", "同じユーザー名の患者が既に存在します。");
+                return ResponseEntity.status(HttpStatus.CONFLICT).body(body);
+            }
+
+            // パスワードのハッシュ化
+            String rawPassword = patient.getUser().getPasswordHash();
+            String hashedPassword = passwordEncoder.encode(rawPassword);
+            patient.getUser().setPasswordHash(hashedPassword);
+
+            // ロールの明示的設定
+            patient.getUser().setRole(User.Role.ROLE_PATIENT);
+
+            // 双方向関連の明示（必要なら）
+            patient.getUser().setPatient(patient);
+
+            // 登録処理
             patientRepository.save(patient);
 
             body.put("message", "患者を登録しました。");
@@ -60,10 +82,10 @@ public class PatientService {
             log.error("患者作成に失敗しました: {}", e.getMessage());
 
             body.put("error", "内部エラーが発生しました。");
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                                 .body(body);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(body);
         }
     }
+
 
     /**
      * 4. 指定された患者IDの予約一覧を取得する（DTO形式）
@@ -96,10 +118,14 @@ public class PatientService {
     	
         try {
         	// ステータスを設定（0: 予約済み, 1: 完了, 2: キャンセル）今回は0と1のみ
-            int status = "past".equalsIgnoreCase(condition) ? 1 : "future".equalsIgnoreCase(condition) ? 0 : -1;
-            
+            int status = "past".equalsIgnoreCase(condition) ? 1 
+            				: "future".equalsIgnoreCase(condition) ? 0
+            				: "cancel".equalsIgnoreCase(condition) ? 2 : -1;
+              
             if (status == -1) return ResponseEntity.badRequest().body("条件が無効です");
-
+            
+            System.out.println("status:" + status);
+            
             List<AppointmentDTO> result = appointmentRepository
             		.findByPatient_IdAndStatusOrderByAppointmentTimeAsc(patientId, status)
                     .stream().map(AppointmentDTO::new)
@@ -142,7 +168,11 @@ public class PatientService {
         try {
         	
         	// ステータスを設定（0: 予約済み, 1: 完了, 2: キャンセル）今回は0と1のみ
-            int status = "past".equalsIgnoreCase(condition) ? 1 : "future".equalsIgnoreCase(condition) ? 0 : -1;
+            int status = "past".equalsIgnoreCase(condition) ? 1 :
+            				"future".equalsIgnoreCase(condition) ? 0 : 
+            				"cancel".equalsIgnoreCase(condition) ? 2 : -1;
+            
+            System.out.println("status:" + status);
             
             if (status == -1) return ResponseEntity.badRequest().body("条件が無効です");
 
@@ -150,6 +180,8 @@ public class PatientService {
                     .filterByDoctorNameAndPatientIdAndStatus(doctorName, patientId , status)
                     .stream().map(AppointmentDTO::new)
                     .collect(Collectors.toList());
+            
+            System.out.println("いいいいい");
             
             return ResponseEntity.ok(result);
             

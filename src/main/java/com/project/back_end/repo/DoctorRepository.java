@@ -14,6 +14,10 @@ import java.util.Optional;
  */
 @Repository
 public interface DoctorRepository extends JpaRepository<Doctor, Long> {
+	
+	
+	@Query("SELECT d FROM Doctor d JOIN FETCH d.availableTimes JOIN FETCH d.user JOIN FETCH d.clinicLocation")
+	List<Doctor> findAllWithUser();
 
     /**
      * ユーザー名（Userエンティティのusername）で医師情報を取得する。
@@ -30,8 +34,20 @@ public interface DoctorRepository extends JpaRepository<Doctor, Long> {
      * @param username ユーザー名
      * @return 該当する {@link Doctor} を含む Optional（存在しない場合は空）
      */
+    @Query("SELECT d FROM Doctor d JOIN FETCH d.user WHERE d.user.username = :username")
     Optional<Doctor> findByUser_Username(String username);
 
+    
+    /**
+     * ユーザー名（User.username）で医師を {@link Optional} で取得します。
+     *
+     * @param useid
+     * @return 該当する {@link Doctor} を含む Optional（存在しない場合は空）
+     */
+    @Query("SELECT d FROM Doctor d JOIN FETCH d.user WHERE d.user.id = :id")
+    Optional<Doctor> findByUser_UserId(Long id);
+    
+    
     /**
      * 名前（User.fullName）に部分一致する医師一覧を取得（大文字・小文字を区別せず）。
      *
@@ -50,7 +66,7 @@ public interface DoctorRepository extends JpaRepository<Doctor, Long> {
      * @param specialty 専門分野
      * @return 一致するDoctorエンティティのリスト
      */
-    @Query("SELECT d FROM Doctor d "
+    @Query("SELECT d FROM Doctor d  JOIN FETCH d.user JOIN FETCH d.clinicLocation "
     		+ "WHERE LOWER(d.user.fullName) LIKE LOWER(CONCAT('%', :name, '%')) "
     		+ "AND LOWER(d.specialty) = LOWER(:specialty)")
     List<Doctor> findByFullNameContainingIgnoreCaseAndSpecialtyIgnoreCase(
@@ -58,14 +74,34 @@ public interface DoctorRepository extends JpaRepository<Doctor, Long> {
     		@Param("specialty") String specialty);
 
 
+
+    /**
+     * 指定された名前に部分一致する医師一覧を取得（大文字小文字無視）。
+     *
+     * @param name 医師の名前（部分一致）
+     * @return 一致するDoctorエンティティのリスト
+     */
+    @Query("SELECT d FROM Doctor d JOIN FETCH d.user JOIN FETCH d.clinicLocation " +
+           "WHERE LOWER(d.user.fullName) LIKE LOWER(CONCAT('%', :name, '%'))")
+    List<Doctor> findByFullNameContainingIgnoreCase(@Param("name") String name);
+
     /**
      * 指定された専門分野（大文字小文字無視）に一致する医師一覧を取得。
      *
      * @param specialty 専門分野
      * @return 一致するDoctorエンティティのリスト
      */
-    List<Doctor> findBySpecialtyIgnoreCase(String specialty);
-    
+    @Query("SELECT d FROM Doctor d JOIN FETCH d.user JOIN FETCH d.clinicLocation " +
+           "WHERE LOWER(d.specialty) = LOWER(:specialty)")
+    List<Doctor> findBySpecialtyIgnoreCase(@Param("specialty") String specialty);
+
+    /**
+     * すべての医師情報を取得（関連するUser・Clinicも一括取得）。
+     *
+     * @return 全てのDoctorエンティティのリスト
+     */
+    @Query("SELECT d FROM Doctor d JOIN FETCH d.user JOIN FETCH d.clinicLocation")
+    List<Doctor> findAll();
     
     /**
      * 指定されたユーザー名を持つ医師が存在するかどうかを判定します。

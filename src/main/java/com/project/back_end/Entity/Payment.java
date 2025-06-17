@@ -76,10 +76,10 @@ public class Payment {
     private Appointment appointment;
 
     /**
-     * 支払い金額。
-     * 金額は10桁のうち小数点以下2桁までの精度で管理されます。
+     * 支払い金額（日本円）。
+     * 円単位での整数管理（小数なし）。
      */
-    @Column(nullable = false, precision = 10, scale = 2)
+    @Column(nullable = true, precision = 10, scale = 0)
     private BigDecimal amount;
 
     /**
@@ -122,7 +122,7 @@ public class Payment {
      * 実際に支払いが行われた日時。
      * 支払いが未完了の場合はnullとなります。
      */
-    @Column(name = "paid_at")
+    @Column(name = "paid_at", columnDefinition = "DATETIME")
     private LocalDateTime paidAt;
 
     /**
@@ -131,7 +131,7 @@ public class Payment {
      * 以後の更新は行いません。
      */
     @NotNull(message = "作成日時は必須です。")
-    @Column(name = "created_at", nullable = false, updatable = false)
+    @Column(name = "created_at", nullable = false, updatable = false, columnDefinition = "DATETIME")
     private LocalDateTime createdAt;
 
     /**

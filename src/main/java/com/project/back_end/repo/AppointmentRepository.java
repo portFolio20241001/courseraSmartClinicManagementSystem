@@ -20,11 +20,12 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
     @Query("SELECT a FROM Appointment a " +
     		     " LEFT JOIN FETCH a.doctor d " +
     		     "WHERE d.id = :doctorId " +
+    		     "AND a.status <> 2 " +  // キャンセルされた予約は除外
     		     "AND a.appointmentTime BETWEEN :startOfDay AND :endOfDay")
     List<Appointment> findByDoctorIdAndAppointmentTimeBetween(
             @Param("doctorId") Long doctorId,
-            @Param("start") LocalDateTime startOfDay,
-            @Param("end") LocalDateTime endOfDay
+            @Param("startOfDay") LocalDateTime startOfDay,
+            @Param("endOfDay") LocalDateTime endOfDay
     );
 
     /**
@@ -53,22 +54,34 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
     @Query("DELETE FROM Appointment a WHERE a.doctor.id = :doctorId")
     void deleteAllByDoctorId(@Param("doctorId") Long doctorId);
 
-    /**
-     * 指定された患者IDに関連するすべての予約を取得する
-     */
-    List<Appointment> findByPatientId(Long patientId);
+
 
     /**
      * 指定された患者IDとステータスに一致する予約を取得（予約時間の昇順でソート）
      */
+    @Query("""
+			    	    SELECT a FROM Appointment a
+			    	    LEFT JOIN FETCH a.doctor d
+			    	    LEFT JOIN FETCH a.patient p
+			    	    LEFT JOIN FETCH p.user u
+			    	    WHERE a.patient.id = :patientId
+			    	    AND a.status = :status
+			    	    ORDER BY a.appointmentTime ASC
+			    	""")
     List<Appointment> findByPatient_IdAndStatusOrderByAppointmentTimeAsc(Long patientId, int status);
 
     /**
      * 医師の氏名（User.fullName）に部分一致し、患者IDに一致する予約を取得（LIKE検索）
      */
-    @Query("SELECT a FROM Appointment a "
-         + "WHERE LOWER(a.doctor.user.fullName) LIKE LOWER(CONCAT('%', :doctorName, '%')) "
-         + "AND a.patient.id = :patientId")
+    @Query("""
+    	    SELECT a FROM Appointment a
+    	    JOIN FETCH a.doctor d
+    	    JOIN FETCH d.user u
+    	    JOIN FETCH a.patient p
+    	    JOIN FETCH p.user pu
+    	    WHERE LOWER(u.fullName) LIKE LOWER(CONCAT('%', :doctorName, '%'))
+    	      AND p.id = :patientId
+    	""")
     List<Appointment> filterByDoctorNameAndPatientId(
             @Param("doctorName") String doctorName, 
             @Param("patientId") Long patientId);
@@ -76,13 +89,21 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
     /**
      * 医師の氏名（User.fullName）に部分一致し、かつ患者IDおよび予約ステータスに一致する予約を取得
      */
-    @Query("SELECT a FROM Appointment a "
-         + "WHERE LOWER(a.doctor.user.fullName) LIKE LOWER(CONCAT('%', :doctorName, '%')) "
-         + "AND a.patient.id = :patientId AND a.status = :status")
-    List<Appointment> filterByDoctorNameAndPatientIdAndStatus(
-            @Param("doctorName") String doctorName,
-            @Param("patientId") Long patientId,
-            @Param("status") int status);
+    @Query("""
+		    	    SELECT a FROM Appointment a
+		    	    JOIN FETCH a.doctor d
+		    	    JOIN FETCH d.user du
+		    	    JOIN FETCH a.patient p
+		    	    JOIN FETCH p.user pu
+		    	    WHERE LOWER(du.fullName) LIKE LOWER(CONCAT('%', :doctorName, '%'))
+		    	    AND p.id = :patientId
+		    	    AND a.status = :status
+		    	""")
+    	List<Appointment> filterByDoctorNameAndPatientIdAndStatus(
+    	        @Param("doctorName") String doctorName,
+    	        @Param("patientId") Long patientId,
+    	        @Param("status") int status);
+
 
 
     /**
@@ -107,6 +128,80 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
     List<Appointment> findByDoctorIdAndAppointmentTime(
         @Param("doctorId") Long doctorId,
         @Param("appointmentTime") LocalDateTime appointmentTime);
+    
+    
+    
+    /**
+     * 指定された医師名（部分一致）、患者ID、ステータスに一致する予約を取得します。
+     *
+     * @param doctorName 医師の氏名（部分一致、大小文字無視）
+     * @param patientId 患者のID
+     * @param status 予約のステータス（0: 予約済み、1: 完了、2: キャンセルなど）
+     * @return 条件に一致する予約のリスト
+     */
+    @Query("""
+        SELECT a FROM Appointment a
+        JOIN FETCH a.doctor d
+        JOIN FETCH d.user u
+        JOIN FETCH a.patient p
+        JOIN FETCH p.user
+        WHERE LOWER(u.fullName) LIKE LOWER(CONCAT('%', :doctorName, '%'))
+          AND p.id = :patientId AND a.status = :status
+    """)
+    List<Appointment> findByDoctorNameAndPatientIdAndStatus(String doctorName, Long patientId, int status);
+
+    /**
+     * 指定された医師名（部分一致）と患者IDに一致する予約を取得します。
+     *
+     * @param doctorName 医師の氏名（部分一致、大小文字無視）
+     * @param patientId 患者のID
+     * @return 条件に一致する予約のリスト
+     */
+    @Query("""
+        SELECT a FROM Appointment a
+        JOIN FETCH a.doctor d
+        JOIN FETCH d.user u
+        JOIN FETCH a.patient p
+        JOIN FETCH p.user
+        WHERE LOWER(u.fullName) LIKE LOWER(CONCAT('%', :doctorName, '%'))
+          AND p.id = :patientId
+    """)
+    List<Appointment> findByDoctorNameAndPatientId(String doctorName, Long patientId);
+
+    /**
+     * 指定された患者IDとステータスに一致する予約を取得します。
+     *
+     * @param patientId 患者のID
+     * @param status 予約のステータス（0: 予約済み、1: 完了、2: キャンセルなど）
+     * @return 条件に一致する予約のリスト
+     */
+    @Query("""
+        SELECT a FROM Appointment a
+        JOIN FETCH a.doctor d
+        JOIN FETCH d.user u
+        JOIN FETCH a.patient p
+        JOIN FETCH p.user
+        WHERE p.id = :patientId AND a.status = :status
+    """)
+    List<Appointment> findByPatientIdAndStatus(Long patientId, int status);
+
+    /**
+     * 指定された患者IDに紐づくすべての予約を取得します。
+     *
+     * @param patientId 患者のID
+     * @return 患者に紐づくすべての予約リスト
+     */
+    @Query("""
+        SELECT a FROM Appointment a
+        JOIN FETCH a.doctor d
+        JOIN FETCH d.user u
+        JOIN FETCH a.patient p
+        JOIN FETCH p.user
+        WHERE p.id = :patientId
+    """)
+    List<Appointment> findByPatientId(Long patientId);
+
+
 
     
     

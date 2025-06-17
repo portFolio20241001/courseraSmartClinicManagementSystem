@@ -94,7 +94,7 @@ public class Appointment {
      */
     @NotNull(message = "予約日時は必須です。")
     @Future(message = "予約日時は未来の日時を指定してください。")
-    @Column(name = "appointment_time", nullable = false)
+    @Column(name = "appointment_time", nullable = false, columnDefinition = "DATETIME")
     private LocalDateTime appointmentTime;
 
     /**

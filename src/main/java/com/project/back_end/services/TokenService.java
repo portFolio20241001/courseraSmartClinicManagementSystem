@@ -127,12 +127,14 @@ public class TokenService {
         // 1) 期限切れ ＆ 署名不正チェック
         String username = extractUsername(token);
         
+        System.out.println("トークン有効性検証対象 username:" + username);
+        
         if (username == null) return false;
 
         // 2) ロール別に DB へ存在確認
         return switch (role.toLowerCase()) {
 
-            case "admin"   -> adminRepository.findByUser_Username(username)                != null;
+            case "admin"   -> adminRepository.findByUser_Username(username)         .isPresent();
 
             case "doctor"  -> doctorRepository.findByUser_Username(username)          .isPresent();
 

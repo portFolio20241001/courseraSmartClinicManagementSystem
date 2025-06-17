@@ -30,7 +30,6 @@ public class PrescriptionForMongo {
      * @NotNullで必須項目。
      */
     @NotNull(message = "患者Idは必須です。")
-    @Size(min = 3, max = 100, message = "患者名は3文字以上100文字以内で入力してください。")
     private String patientId;
 
     /**

@@ -3,6 +3,8 @@ package com.project.back_end.services;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -20,18 +22,22 @@ import org.springframework.transaction.annotation.Transactional;
 import com.project.back_end.DTO.Login;
 import com.project.back_end.Entity.Appointment;
 import com.project.back_end.Entity.Doctor;
+import com.project.back_end.Entity.User;
 import com.project.back_end.repo.AppointmentRepository;
 //import com.project.back_end.services.TokenService;
 import com.project.back_end.repo.DoctorRepository;
+import com.project.back_end.repo.UserRepository;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+
 
 @Service  // 1. サービス層コンポーネントとして登録
 @RequiredArgsConstructor  // 2. コンストラクタインジェクションを自動生成
 @Slf4j  // ログ出力用アノテーション
 public class DoctorService {
 
+    private final UserRepository userRepository;
     private final DoctorRepository doctorRepository;
     private final AppointmentRepository appointmentRepository;
     private final TokenService tokenService;
@@ -48,8 +54,18 @@ public class DoctorService {
      */
     @Transactional(readOnly = true)
     public List<Doctor> findAllDoctors() {
-        // 例外処理は呼び出し側でまとめて行いたいので、ここではそのまま返すだけ
-        return doctorRepository.findAll();
+    	
+    	log.info("★ ポイント1");
+    	
+    	// 例外処理は呼び出し側でまとめて行いたいので、ここではそのまま返すだけ
+    	List<Doctor> doctorList =doctorRepository.findAllWithUser();
+    	
+    	for (Doctor doctor : doctorList) {
+    	    log.info("★ doctor.toString: {}", doctor.toString());
+    	}
+    	
+        
+        return doctorList;
     }
     
     /**
@@ -73,7 +89,11 @@ public class DoctorService {
         Map<String, Object> body = new HashMap<>();
 
         try {
+        	
             body.put("doctors", findAllDoctors());
+            
+        	log.info("★ ポイント2");
+            
             return ResponseEntity.ok(body);
 
         } catch (Exception e) {
@@ -98,6 +118,8 @@ public class DoctorService {
      */
     @Transactional(readOnly = true)
     public List<String> getDoctorAvailability(Long doctorId, LocalDate date) {
+    	
+    	System.out.println("◆ 入力 date: " + date); // ← 追加
 
         // 1) 医師存在チェック
         Doctor doctor = doctorRepository.findById(doctorId)
@@ -108,23 +130,61 @@ public class DoctorService {
         // 2) その日 0:00〜23:59 で既予約を取得
         LocalDateTime startOfDay = date.atStartOfDay();
         LocalDateTime endOfDay   = date.atTime(LocalTime.MAX);
-
+        
+        System.out.println("◆ startOfDay: " + startOfDay);
+        System.out.println("◆ endOfDay: " + endOfDay);
+        
+        // 3. 指定日の予約を取得
         List<Appointment> booked = appointmentRepository
                 .findByDoctorIdAndAppointmentTimeBetween(doctorId, startOfDay, endOfDay);
+        
+        Set<String> bookedStartTimes = booked.stream()
+                .map(a -> a.getAppointmentTime().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")))
+                .collect(Collectors.toSet());
+        
+        
+        System.out.println("bookedStartTimes: " + bookedStartTimes);
+        
 
-        // 3) 予約済みスロットを文字列で取り出し
-        Set<String> bookedSlotStarts = booked.stream()
-            .map(a -> a.getAppointmentTime().toLocalTime().toString()) // "09:00"
-            .collect(Collectors.toSet());
+            // 4. 利用可能スロットから予約済を除外（指定日でフィルタ）
+            return doctor.getAvailableTimes().stream()
+//                .filter(slot -> {
+//                    // 例: "2025-06-11 09:00-10:00" の開始部分を取り出す
+//                    String[] parts = slot.split("-");
+//                    String startTimeStr = parts[0]; // "2025-06-11 09:00"
+//
+//                    // 指定日のみ対象
+//                    if (!startTimeStr.startsWith(date.toString())) {
+//                        return false;
+//                    }
+//
+//                    // 予約済みかどうか
+//                    return !bookedStartTimes.contains(startTimeStr);
+//                })
+//                .toList();
+            
+     	    .filter(slot -> {
+     	        // スロット例: "2025-06-11 09:00-10:00"
+     	        String[] dateAndTime = slot.split(" "); // ["2025-06-11", "09:00-10:00"]
+     	        if (dateAndTime.length != 2) return false;
 
-        // 4) availableTimes から予約済みを除外
-        return doctor.getAvailableTimes()
-                     .stream()
-                     .filter(slot -> {                 // "09:00-10:00"
-                         String startTime = slot.split("-")[0]; // "09:00"
-                         return !bookedSlotStarts.contains(startTime);
-                     })
-                     .toList();
+     	        String datePart = dateAndTime[0];        // "2025-06-11"
+     	        String timeRange = dateAndTime[1];       // "09:00-10:00"
+     	        String startTime = timeRange.split("-")[0]; // "09:00"
+     	        String startDateTimeStr = datePart + " " + startTime; // "2025-06-11 09:00"
+                
+                System.out.println("startDateTimeStr:"+startDateTimeStr);
+                
+
+                // パースしてLocalDateを比較する
+       	        LocalDate slotDate = LocalDate.parse(datePart);
+
+                // 日付が一致し、予約されていないものだけ
+                return slotDate.equals(date) && !bookedStartTimes.contains(startDateTimeStr);
+           })
+          .toList();
+            
+            
     }
 
 
@@ -135,19 +195,31 @@ public class DoctorService {
     @Transactional
     public int saveDoctor(Doctor doctor) {
         try {
+            // ユーザー名が既に存在するか確認
             if (doctorRepository.existsByUser_Username(doctor.getUser().getUsername())) {
-                return -1;
+                return -1;  // ユーザー名重複
             }
-            
-            doctorRepository.save(doctor);
-            
-            return 1;
+
+            // パスワードのハッシュ化（必要なら）
+            String rawPassword = doctor.getUser().getPasswordHash();
+            String hashedPassword = passwordEncoder.encode(rawPassword);
+            doctor.getUser().setPasswordHash(hashedPassword);
+
+            // ロールの明示的設定（安全性のため）
+            doctor.getUser().setRole(User.Role.ROLE_DOCTOR);
+
+            // 双方向関連の明示（必要なら）
+            doctor.getUser().setDoctor(doctor);
+
+            // 保存
+            doctorRepository.save(doctor);  // CascadeType.ALL により user も保存される
+
+            return 1;  // 成功
             
         } catch (Exception e) {
         	
-            log.error("Doctor登録エラー: {}", e.getMessage());
-            
-            return 0;
+            log.error("Doctor登録エラー: {}", e.getMessage(), e);
+            return 0;  // 内部エラー
             
         }
     }
@@ -166,24 +238,54 @@ public class DoctorService {
      */
     @Transactional
     public ResponseEntity<Map<String, String>> updateDoctor(Doctor doctor) {
+    	
+    	System.out.println("USER: " + doctor.getUser().getFullName());
 
         Map<String, String> body = new HashMap<>();
-
-        /* --- 1. 存在チェック -------------------- */
-        if (!doctorRepository.existsById(doctor.getId())) {
-            body.put("error", "指定 ID の医師は存在しません。");
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(body);
-        }
-
-        /* --- 2. 更新処理 ----------------------- */
+        
         try {
+        
+	        /* --- doctorId nullチェック -------------------- */
+	        if (doctor.getId() == null) {
+	            throw new IllegalArgumentException("Doctor IDを更新するならIDがNULLはダメです。");
+	        }
+
+	        /* --- 1. 存在チェック -------------------- */
+	        if (!doctorRepository.existsById(doctor.getId())) {
+	            body.put("error", "指定 ID の医師は存在しません。");
+	            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(body);
+	        }
+	        
+	        System.out.println("doctor.getId():" + doctor.getId());
+	        
+	        Doctor existingDoctor = doctorRepository.findByUser_UserId(doctor.getId())
+	                .orElseThrow(() -> new RuntimeException("ユーザーが存在しません"));
+
+	        // 既存のUserを取得して上書き
+	        User existingUser = existingDoctor.getUser();
+
+	        existingUser.setUsername(doctor.getUser().getUsername());
+	        existingUser.setPasswordHash(passwordEncoder.encode(doctor.getUser().getPasswordHash()));
+	        existingUser.setFullName(doctor.getUser().getFullName());
+	        existingUser.setRole(User.Role.ROLE_DOCTOR); // 明示的にセット
+	        existingUser.setDoctor(existingDoctor);      // 双方向の整合性
+
+	        // doctor に既存 user を再セット（←ここ重要）
+	        doctor.setUser(existingUser);
+            
+            System.out.println("あああ");
+            System.out.println("あdoctor："+ doctor);
+            
+
+        	/* --- 2. 更新処理 ----------------------- */
+
             doctorRepository.save(doctor);
             body.put("message", "医師情報を更新しました。");
             return ResponseEntity.ok(body);
 
         } catch (Exception e) {
             log.error("Doctor 更新失敗 : {}", e.getMessage());
-            body.put("error", "内部エラーにより更新できませんでした。");
+            body.put("error", e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(body);
         }
     }
@@ -207,18 +309,29 @@ public class DoctorService {
 
         Map<String, String> body = new HashMap<>();
 
+        
+        System.out.println("eee");
+        
         /* --- 1. 存在チェック -------------------------------- */
         if (!doctorRepository.existsById(doctorId)) {
             body.put("error", "指定 ID の医師は存在しません。");
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(body);
         }
+        
+        System.out.println("fff");
 
         /* --- 2. 予約 & 医師レコード削除 --------------------- */
         try {
+        	
+            System.out.println("ggg");
+        	
             appointmentRepository.deleteAllByDoctorId(doctorId);  // 先に外側を削除
+            
             doctorRepository.deleteById(doctorId);
+            
+            userRepository.deleteById(doctorId);  // ← ここで User も削除
 
-            body.put("message", "医師を削除しました。");
+            body.put("message", "医師(および紐づく予定履歴)を削除しました。");
             return ResponseEntity.ok(body);
 
         } catch (Exception e) {
@@ -260,13 +373,18 @@ public class DoctorService {
             }
 
             Doctor doctor = opt.get();
-
+            
             /* 2. パスワード検証  */
             if (!passwordEncoder.matches(
             							 login.getPassword(),									//平文PW
                                          doctor.getUser().getPasswordHash())) {		//ハッシュPW
             	
                 body.put("error", "パスワードが一致しません。");
+                
+                System.out.println("login.getPassword():" + "[" + login.getPassword() + "]");
+                System.out.println("doctor.getUser().getPasswordHash():" + doctor.getUser().getPasswordHash());
+
+                
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(body);
                 
             }
@@ -360,11 +478,38 @@ public class DoctorService {
     @Transactional(readOnly = true)
     public List<Doctor> filterDoctorsByNameSpecilityandTime(String name, String specialty, String period) {
     	
+        // null または "null" の扱いを共通で処理
+    	String safeName = (name == null || name.equalsIgnoreCase("null")) ? "" : name;
+    	String safeSpecialty = (specialty == null || specialty.equalsIgnoreCase("null")) ? "" : specialty;
+
+
+        System.out.println("safeName:" + safeName);
+        System.out.println("specialty:" + safeSpecialty);
+        
+        
+        // 名前 or 専門が空なら全件検索、そうでなければ条件付きで検索
+        List<Doctor> list;
+        if (safeName.isEmpty() && safeSpecialty.isEmpty()) {
+            list = doctorRepository.findAll(); // 全件
+        } else if (safeName.isEmpty()) {
+            list = doctorRepository.findBySpecialtyIgnoreCase(safeSpecialty);
+        } else if (safeSpecialty.isEmpty()) {
+            list = doctorRepository.findByFullNameContainingIgnoreCase(safeName);
+        } else {
+            list = doctorRepository.findByFullNameContainingIgnoreCaseAndSpecialtyIgnoreCase(safeName, safeSpecialty);
+        }
+    	
         // 名前＋専門分野でまず絞り込む
-        List<Doctor> list = doctorRepository.findByFullNameContainingIgnoreCaseAndSpecialtyIgnoreCase(name, specialty);
+//        List<Doctor> list = doctorRepository.findByFullNameContainingIgnoreCaseAndSpecialtyIgnoreCase(safeName, safeSpecialty);
+        
+        System.out.println("list:" + list);
         
         // 午前 or 午後でさらにフィルター
-        return filterDoctorByTime(list, period);
+        List<Doctor> filterdList = filterDoctorByTime(list, period);
+        
+        System.out.println("filterdList:" + filterdList);
+        
+        return filterdList;
     }
 
 
@@ -382,8 +527,19 @@ public class DoctorService {
     public List<Doctor> filterDoctorByTime(List<Doctor> doctors, String period) {
     	
         return doctors.stream()
-            .filter(d -> d.getAvailableTimes().stream()  // 医師の診察可能時間を調べる
-                          .anyMatch(slot -> matchesPeriod(slot, period)))  // どれか1つでも時間帯にマッチしていればOK
+                .map(d -> {
+                    // 条件にマッチした availableTimes のみを残す
+                    List<String> filteredSlots = d.getAvailableTimes().stream()
+                        .filter(slot -> matchesPeriod(slot, period))
+                        .collect(Collectors.toList());
+
+                    // availableTimes を上書き（破壊的変更）
+                    d.setAvailableTimes(filteredSlots);
+
+                    return d;
+                })
+                .filter(d -> !d.getAvailableTimes().isEmpty()) // フィルター後の availableTimes が空でない医師のみ返す
+
             .collect(Collectors.toList());  // 条件に合う医師だけをリストにして返す
         
     }
@@ -403,16 +559,32 @@ public class DoctorService {
      */
     private boolean matchesPeriod(String slot, String period) {
     	
-        LocalTime t = LocalTime.parse(slot);  // 文字列を LocalTime に変換（"09:00" → 9時0分）
-
-        // AM: 正午より前（0:00〜11:59）
-        if ("AM".equalsIgnoreCase(period)) return t.isBefore(LocalTime.NOON);
-
-        // PM: 正午以降（12:00〜23:59）
-        else if ("PM".equalsIgnoreCase(period)) return !t.isBefore(LocalTime.NOON);
-
-        // それ以外の period（例：null）は true 扱い（全時間帯マッチ）
-        return true;
+    	try {
+	    	// "2025-06-11 09:00" 形式 → LocalDateTime にパース
+	    	// 先頭16文字だけを取り出す → "2025-06-20 09:00"
+	        String start = slot.substring(0, 16);
+	        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+	        LocalTime time = LocalDateTime.parse(start, formatter).toLocalTime();
+	        
+	        System.out.println("LocalTime:" + time );
+	
+	        // AM: 正午より前（0:00〜11:59）
+	        if ("AM".equalsIgnoreCase(period)) return time.isBefore(LocalTime.NOON);
+	
+	        // PM: 正午以降（12:00〜23:59）
+	        else if ("PM".equalsIgnoreCase(period)) return !time.isBefore(LocalTime.NOON);
+	
+	        // それ以外の period（例：null）は true 扱い（全時間帯マッチ）
+	        return true;
+	        
+    	} catch (DateTimeParseException | StringIndexOutOfBoundsException e) {
+    		
+            // フォーマット不正などで例外が出た場合は無視して false 扱い
+            System.err.println("パースエラー: " + slot);
+            return false;
+            
+        }
+    	
     }
 
 }

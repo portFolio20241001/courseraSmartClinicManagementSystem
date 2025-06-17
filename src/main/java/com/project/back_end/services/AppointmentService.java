@@ -13,7 +13,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.project.back_end.DTO.AppointmentDTO;
 import com.project.back_end.Entity.Appointment;
+import com.project.back_end.Entity.Payment;
 import com.project.back_end.repo.AppointmentRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -43,10 +45,18 @@ public class AppointmentService {
         Map<String, String> response = new HashMap<>();
         
         try {
-        	
-            appointmentRepository.save(appointment);
-            response.put("message", "予約が正常に登録されました。");
-            return ResponseEntity.status(HttpStatus.CREATED).body(response);   // ← 201 Created
+            // Payment が含まれているかチェック
+            if (appointment.getPayment() != null) {
+            	
+                Payment payment = appointment.getPayment();
+                payment.setAppointment(appointment); // リレーションの逆方向もセット
+                
+            }
+
+            appointmentRepository.save(appointment); // Cascade.ALL により Payment も保存される
+
+            response.put("message", "予約と支払い情報を登録しました。");
+            return ResponseEntity.status(HttpStatus.CREATED).body(response);
             
         } catch (Exception e) {
         	
@@ -68,6 +78,7 @@ public class AppointmentService {
      */
     @Transactional
     public ResponseEntity<Map<String, String>> updateAppointment(Appointment updatedAppointment) {
+    	
         Map<String, String> response = new HashMap<>();
 
         // 予約の存在確認
@@ -148,10 +159,49 @@ public class AppointmentService {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response);
         }
 
-        // 予約削除
-        appointmentRepository.delete(appointment);
+        // ステータス変更による論理キャンセル（例: 2 = キャンセル）
+        appointment.setStatus(2);
+        appointmentRepository.save(appointment);
 
         response.put("message", "予約がキャンセルされました。");
+        return ResponseEntity.ok(response);
+    }
+    
+    /**
+     * 医師ID・日付に基づいて予約リストを取得するメソッド。
+     * - トークンの有効性を検証
+     * - 日付の開始～終了までの範囲で絞り込み
+     * - 患者名指定があれば部分一致検索
+     * @param doctorId 医師ID
+     * @param date 検索対象の日付
+     * @param token 認証トークン
+     * @return 予約リストを含むレスポンス
+     */
+    @Transactional(readOnly = true)
+    public ResponseEntity<Map<String, Object>> getAppointmentsByDate(Long doctorId, LocalDate date, String token) {
+    	
+        Map<String, Object> response = new HashMap<>();
+        
+        // トークンの有効性チェック
+        if (!tokenService.isValidToken(token)) {
+            response.put("error", "無効なトークンです。");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
+        }
+
+        LocalDateTime startOfDay = date.atStartOfDay();
+        LocalDateTime endOfDay = date.atTime(LocalTime.MAX);
+
+        List<Appointment> appointments = appointmentRepository
+            .findByDoctorIdAndAppointmentTimeBetween(doctorId, startOfDay, endOfDay);
+        
+        System.out.println("ccc");
+        
+        // DTOに詰め替えるのはベストプラクティス　できれば他もそうしたほうがよき
+        List<AppointmentDTO> dtos = appointments.stream()
+                .map(AppointmentDTO::new)
+                .toList();
+
+        response.put("appointments", dtos);
         return ResponseEntity.ok(response);
     }
 
@@ -180,19 +230,35 @@ public class AppointmentService {
         // 指定日の00:00～23:59:59.999を表すLocalDateTimeを作成
         LocalDateTime startOfDay = date.atStartOfDay();
         LocalDateTime endOfDay = date.atTime(LocalTime.MAX);
+        
+        // 「文字列 "null"」は null として扱う
+        if ("null".equalsIgnoreCase(patientName)) {
+        	patientName = null;
+        }
 
         List<Appointment> appointments;
         if (patientName != null && !patientName.isBlank()) {
+        	
+        	System.out.println("ddd");
+        	
             // 患者名部分一致で絞り込み
             appointments = appointmentRepository.findByDoctorIdAndPatientFullNameContainingIgnoreCaseAndAppointmentTimeBetween(
                     doctorId, patientName, startOfDay, endOfDay);
+            
+            System.out.println("appointments"+appointments);
+            
         } else {
             // 患者名指定なしの場合
             appointments = appointmentRepository.findByDoctorIdAndAppointmentTimeBetween(
                     doctorId, startOfDay, endOfDay);
         }
+        
+        // DTOに詰め替えるのはベストプラクティス　できれば他もそうしたほうがよき
+        List<AppointmentDTO> dtos = appointments.stream()
+                .map(AppointmentDTO::new)
+                .toList();
 
-        response.put("appointments", appointments);
+        response.put("appointments", dtos);
         return ResponseEntity.ok(response);
     }
     

@@ -150,7 +150,7 @@ public class AdminController {
     	                value   = """
     	                    {
     	                      "username": "adminUser1",
-    	                      "password": "adminPassPlain"
+    	                      "password": "addpass1"
     	                    }"""
     	            )
     	        )

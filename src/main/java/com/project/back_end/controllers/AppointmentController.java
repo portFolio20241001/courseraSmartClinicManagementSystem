@@ -3,9 +3,11 @@ package com.project.back_end.controllers;
 import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -63,6 +65,96 @@ public class AppointmentController {
         this.appointmentService = appointmentService;
         this.commonService            = service;
     }
+    
+    
+    @Operation(
+    	    summary = "指定日付の医師単位での予約一覧取得（by Doctor）",
+    	    description = "指定した医師 ID と日付に基づいて、その日に予約されているすべての予約情報を返します。",
+    	    parameters = {
+    	        @Parameter(name = "doctorId", description = "医師の ID", example = "2"),
+    	        @Parameter(name = "date", description = "予約日 (yyyy-MM-dd)", example = "2025-09-11"),
+    	        @Parameter(name = "token", description = "JWT トークン（ROLE_DOCTOR）", example = "eyJhbGciOiJIUzI1NiJ9.tokenSignature")
+    	    },
+    	    responses = {
+    	        @ApiResponse(
+    	            responseCode = "200",
+    	            description = "該当日の予約リストを返却",
+    	            content = @Content(
+    	                mediaType = MediaType.APPLICATION_JSON_VALUE,
+    	                examples = @ExampleObject(
+    	                    name = "予約一覧の例",
+    	                    value = """
+    	                    {
+    	                      "appointments": [
+    	                        {
+    	                          "id": 1,
+    	                          "doctorId": 2,
+    	                          "patientId": 12,
+    	                          "patientName": "松本 綾香",
+    	                          "appointmentTime": "2025-09-11T09:00:00",
+    	                          "status": 0,
+    	                          "payment": null
+    	                        },
+    	                        {
+    	                          "id": 2,
+    	                          "doctorId": 2,
+    	                          "patientId": 13,
+    	                          "patientName": "佐藤 優子",
+    	                          "appointmentTime": "2025-09-11T10:00:00",
+    	                          "status": 0,
+    	                          "payment": null
+    	                        }
+    	                      ]
+    	                    }
+    	                    """
+    	                )
+    	            )
+    	        ),
+    	        @ApiResponse(
+    	            responseCode = "401",
+    	            description = "認証トークンが無効",
+    	            content = @Content(
+    	                mediaType = MediaType.APPLICATION_JSON_VALUE,
+    	                examples = @ExampleObject(
+    	                    name = "トークンエラー例",
+    	                    value = """
+    	                    {
+    	                      "error": "トークンが無効です"
+    	                    }
+    	                    """
+    	                )
+    	            )
+    	        )
+    	    }
+    	)
+
+    /**
+     * 指定日・患者名で医師の予約を検索して返却する。  
+     * <p>トークンは <b>doctor</b> ロールとして検証される。</p>
+     *
+     * @param doctorId         医師のID
+     * @param date         予約日 (yyyy-MM-dd)
+     * @param token        認証トークン
+     *
+     * @return 200：予約一覧 / その他：検証失敗
+     */
+    @GetMapping("/{doctorId}/{date}/{token}")
+    public ResponseEntity<Map<String, Object>> getAppointmentsByDate(
+            @PathVariable Long doctorId,
+            @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+            @PathVariable String token) {
+
+        // トークン検証（doctor ロール）
+        Optional<String> hasError = commonService.validateToken(token, "doctor");
+        if (hasError.isPresent()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                                 .body(Map.of("error", hasError.get()));
+        }
+
+        // 指定日付の予約一覧を取得
+        return appointmentService.getAppointmentsByDate(doctorId, date, token);
+    }
+    
 
     /* ====================================================================
      * ① 予約一覧取得（医師）
@@ -73,7 +165,7 @@ public class AppointmentController {
         parameters  = {
             @Parameter(name = "doctorId", description = "医師 ID", example = "2"),
             @Parameter(name = "date",     description = "検索対象日 (yyyy-MM-dd)", example = "2025-09-11"),
-            @Parameter(name = "patientName", description = "患者名（部分一致）例: \"松本\"", example = "松本"),
+            @Parameter(name = "patientName", description = "患者名（部分一致）例: \"松本\"(null指定で全件指定)", example = "松本"),
             @Parameter(name = "token",    description = "Doctor ログイントークン", example = "eyJhbGciOiJIUzI1NiJ9.doctorTokenSig")
         },
         responses = {
@@ -114,7 +206,7 @@ public class AppointmentController {
                 content      = @Content(
                     mediaType = MediaType.APPLICATION_JSON_VALUE,
                     examples  = @ExampleObject(value = """
-                    { "error": "トークンが無効または期限切れです。" }
+                    { "error": "トークンが無効です。" }
                     """)
                 )
             )
@@ -140,13 +232,17 @@ public class AppointmentController {
             @PathVariable String token) {
 
         /* ===== 1. トークン検証（doctor ロール） ===== */
-        ResponseEntity<Map<String, String>> tokenResult = commonService.validateToken(token, "doctor");
+    	Optional<String> hasError = commonService.validateToken(token, "doctor");  
+
+        System.out.println("ポイント1");
         
-        if (tokenResult.getBody() != null && !tokenResult.getBody().isEmpty()) {
-            // エラーが含まれていればそのまま返す
-            Map<String, Object> body = new HashMap<>(tokenResult.getBody());
-            return ResponseEntity.status(tokenResult.getStatusCode()).body(body);
+        if (hasError.isPresent()) {
+            // 認証エラーをそのまま返す
+        	return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("error", hasError.get()));
         }
+        
+        System.out.println("aaaaaa");
 
         /* ===== 2. 予約一覧取得　返却 ===== */
         return appointmentService.getAppointments(doctorId, date, patientName, token);
@@ -157,54 +253,67 @@ public class AppointmentController {
      * ② 予約作成（患者）
      * ===================================================================*/
     @Operation(
-        summary     = "新規予約作成 (by Patient)",
-        description = "患者が医師の空き時間に予約を入れます。",
-        parameters  = @Parameter(
-            name        = "token",
-            description = "Patient ログイントークン",
-            example     = "eyJhbGciOiJIUzI1NiJ9.patientTokenSig"
-        ),
-        requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
-            required = true,
-            description = "予約内容",
-            content = @Content(
-                mediaType = MediaType.APPLICATION_JSON_VALUE,
-                schema    = @Schema(implementation = Appointment.class),
-                examples  = @ExampleObject(
-                    name   = "予約作成例",
-                    value  = """
-                    {
-                      "doctor":   { "id": 2 },
-                      "patient":  { "id": 12 },
-                      "appointmentTime": "2025-09-11T09:00:00",
-                      "status": 0
-                    }
-                    """
-                )
-            )
-        ),
-        responses = {
-            @ApiResponse(
-                responseCode = "201",
-                description  = "予約作成成功",
-                content      = @Content(
-                    mediaType = MediaType.APPLICATION_JSON_VALUE,
-                    examples  = @ExampleObject(value = """
-                    { "message": "予約が正常に登録されました。" }
-                    """)
-                )
-            ),
-            @ApiResponse(
-                responseCode = "400",
-                description  = "バリデーションエラー / 医師不在",
-                content      = @Content(
-                    examples = @ExampleObject(value = """
-                    { "message": "指定時間はすでに予約済み、または医師が不在です。" }
-                    """)
-                )
-            )
-        }
-    )
+    	    summary     = "新規予約作成＋支払い情報（by Patient）",
+    	    description = "患者が医師の空き時間に予約を入れ、必要であれば支払い情報も同時に登録します。",
+    	    parameters  = @Parameter(
+    	        name        = "token",
+    	        description = "Patient ログイントークン",
+    	        example     = "eyJhbGciOiJIUzI1NiJ9.patientTokenSig"
+    	    ),
+    	    requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
+    	        required    = true,
+    	        description = "予約内容（支払い情報は任意）",
+    	        content     = @Content(
+    	            mediaType = "application/json",
+    	            schema    = @Schema(implementation = Appointment.class),
+    	            examples  = @ExampleObject(
+    	                name   = "予約と支払い登録例",
+    	                value  = """
+    	                {
+    	                  "doctor":   { "id": 2 },
+    	                  "patient":  { "id": 12 },
+    	                  "appointmentTime": "2025-09-17T11:00:00",
+    	                  "status": 0,
+    	                  "payment": {
+    	                    "paymentMethod": "credit",
+    	                    "paymentStatus": "Pending"
+    	                  }
+    	                }
+    	                """
+    	            )
+    	        )
+    	    ),
+    	    responses = {
+    	        @ApiResponse(
+    	            responseCode = "201",
+    	            description  = "予約と支払いが正常に登録されました。",
+    	            content      = @Content(
+    	                mediaType = "application/json",
+    	                examples  = @ExampleObject(value = """
+    	                { "message": "予約と支払いが正常に登録されました。" }
+    	                """)
+    	            )
+    	        ),
+    	        @ApiResponse(
+    	            responseCode = "400",
+    	            description  = "バリデーションエラー / 医師不在・重複予約など",
+    	            content      = @Content(
+    	                examples = @ExampleObject(value = """
+    	                { "message": "指定時間はすでに予約済み、または医師が不在です。" }
+    	                """)
+    	            )
+    	        ),
+    	        @ApiResponse(
+    	            responseCode = "401",
+    	            description  = "認証失敗（無効なトークン）",
+    	            content      = @Content(
+    	                examples = @ExampleObject(value = """
+    	                { "error": "トークンが無効です。" }
+    	                """)
+    	            )
+    	        )
+    	    }
+    	)
     /**
      * 新規予約を作成する。
      *
@@ -218,10 +327,14 @@ public class AppointmentController {
             @PathVariable String token) {
 
         /* トークン検証（patient ロール） */
-        ResponseEntity<Map<String, String>> tokenResult = commonService.validateToken(token, "patient");
+    	Optional<String> hasError = commonService.validateToken(token, "patient");  
+
+        System.out.println("ポイント1");
         
-        if (tokenResult.getBody() != null && !tokenResult.getBody().isEmpty()) {
-            return tokenResult;
+        if (hasError.isPresent()) {
+            // 認証エラーをそのまま返す
+        	return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("error", hasError.get()));
         }
 
         Map<String, String> res = new HashMap<>();
@@ -229,12 +342,13 @@ public class AppointmentController {
         /* 予約可能か検証 */
         int chk = commonService.validateAppointment(appointment);
         
+        
         if (chk == -1) {
-            res.put("message", "無効な Doctor ID です。");
+            res.put("message", "指定した医師が存在しません。");
             return ResponseEntity.badRequest().body(res);
         }
         if (chk == 0) {
-            res.put("message", "指定時間はすでに予約済み、または医師が不在です。");
+            res.put("message", "指定時間に医師の空きがありません。");
             return ResponseEntity.badRequest().body(res);
         }
 
@@ -246,7 +360,7 @@ public class AppointmentController {
      * ③ 予約更新（患者）
      * ===================================================================*/
     @Operation(
-        summary     = "予約更新 (by Patient)",
+        summary     = "予約時間の更新 (by Patient)",
         description = "患者自身の既存予約を変更します。",
         parameters  = @Parameter(
             name        = "token",
@@ -260,15 +374,19 @@ public class AppointmentController {
                 schema   = @Schema(implementation = Appointment.class),
                 examples = @ExampleObject(
                     name  = "更新例",
-                    value = """
-                    {
-                      "id": 1,
-                      "doctor":   { "id": 2 },
-                      "patient":  { "id": 12 },
-                      "appointmentTime": "2025-09-11T11:00:00",
-                      "status": 0
-                    }
-                    """
+	                value  = """
+	                {
+	                  "id": 58,
+	                  "doctor":   { "id": 2 },
+	                  "patient":  { "id": 12 },
+	                  "appointmentTime": "2025-09-18T11:00:00",
+	                  "status": 0,
+	                  "payment": {
+	                    "paymentMethod": "credit",
+	                    "paymentStatus": "Pending"
+	                  }
+	                }
+	                """
                 )
             )
         ),
@@ -296,10 +414,14 @@ public class AppointmentController {
             @RequestBody @Valid Appointment appointment) {
 
         /* トークン検証（patient ロール） */
-        ResponseEntity<Map<String, String>> tokenResult = commonService.validateToken(token, "patient");
+    	Optional<String> hasError = commonService.validateToken(token, "patient");  
+
+        System.out.println("ポイント1");
         
-        if (tokenResult.getBody() != null && !tokenResult.getBody().isEmpty()) {
-            return tokenResult;
+        if (hasError.isPresent()) {
+            // 認証エラーをそのまま返す
+        	return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("error", hasError.get()));
         }
 
         return appointmentService.updateAppointment(appointment);
@@ -350,10 +472,14 @@ public class AppointmentController {
             @PathVariable String token) {
 
         /* トークン検証（patient ロール） */
-        ResponseEntity<Map<String, String>> tokenResult = commonService.validateToken(token, "patient");
+    	Optional<String> hasError = commonService.validateToken(token, "patient");  
+
+        System.out.println("ポイント1");
         
-        if (tokenResult.getBody() != null && !tokenResult.getBody().isEmpty()) {
-            return tokenResult;
+        if (hasError.isPresent()) {
+            // 認証エラーをそのまま返す
+        	return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("error", hasError.get()));
         }
 
         return appointmentService.cancelAppointment(id, token);

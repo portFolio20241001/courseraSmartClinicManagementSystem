@@ -100,7 +100,7 @@ public class Doctor {
      * 専門分野。3〜50文字で必須。
      */
     @NotNull(message = "専門分野は必須です。")
-    @Size(min = 3, max = 50, message = "専門分野は3〜50文字で入力してください。")
+    @Size(min = 2, max = 50, message = "専門分野は2〜50文字で入力してください。")
     private String specialty;
 
     /**
@@ -122,13 +122,25 @@ public class Doctor {
     /**
      * 登録日時。新規作成時に現在日時をセット。更新不可。
      */
-    @NotNull(message = "登録日時は必須です。")
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
     @PrePersist
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();
+    }
+    
+    @Override
+    public String toString() {
+        return "Doctor{" +
+                "id=" + id +
+                ", specialty='" + specialty + '\'' +
+                ", phone='" + phone + '\'' +
+                ", createdAt=" + createdAt +
+                ", user=" + (user != null ? user.getUsername() : "null") +
+                ", clinicLocation=" + (clinicLocation != null ? clinicLocation.getName() : "null") +
+                ", availableTimes=" + (availableTimes != null ? availableTimes.size() + "件" : "null") +
+                '}';
     }
     
 }

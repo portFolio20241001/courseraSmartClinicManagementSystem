@@ -2,6 +2,7 @@ package com.project.back_end.controllers;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -114,7 +115,7 @@ public class PatientController {
     	        description  = "トークンが無効 / 期限切れ",
     	        content      = @Content(
     	            examples = @ExampleObject(
-    	                value = "{\"error\":\"トークンが無効または期限切れです。\"}"
+    	                value = "{\"error\":\"トークンが無効です。\"}"
     	            )
     	        )
     	    )
@@ -130,12 +131,14 @@ public class PatientController {
     public ResponseEntity<Map<String, Object>> getPatient(@PathVariable String token) {
 
         /* ① トークン検証（patient ロールのみ許可） */
-        ResponseEntity<Map<String, String>> auth = commonService.validateToken(token, "patient");
+    	Optional<String> hasError = commonService.validateToken(token, "patient");  
 
-        if (auth.getBody() != null && !auth.getBody().isEmpty()) {
-            // 認証失敗時はそのままエラーを返却
-            return ResponseEntity.status(auth.getStatusCode())
-                                 .body(new HashMap<>(auth.getBody()));
+        System.out.println("ポイント1");
+        
+        if (hasError.isPresent()) {
+            // 認証エラーをそのまま返す
+        	return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("error", hasError.get()));
         }
 
         /* ② Service から患者情報を取得して返却 */
@@ -367,7 +370,7 @@ public class PatientController {
     	            description  = "トークン検証失敗",
     	            content      = @Content(
     	                examples = @ExampleObject(
-    	                    value = "{\"error\":\"トークンが無効または期限切れです。\"}"
+    	                    value = "{\"error\":\"トークンが無効です。\"}"
     	                )
     	            )
     	        ),
@@ -394,10 +397,16 @@ public class PatientController {
             @PathVariable Long id,
             @PathVariable String token) {
 
-        ResponseEntity<Map<String, String>> auth = commonService.validateToken(token, "patient");
-        if (auth.getBody() != null && !auth.getBody().isEmpty()) {
-            return auth;
+    	Optional<String> hasError = commonService.validateToken(token, "patient");  
+
+        System.out.println("ポイント1");
+        
+        if (hasError.isPresent()) {
+            // 認証エラーをそのまま返す
+        	return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("error", hasError.get()));
         }
+        
         return patientService.getPatientAppointment(id);
     }
 
@@ -407,7 +416,7 @@ public class PatientController {
     @Operation(
     	    summary     = "予約履歴をフィルタ (by Patient)",
     	    description = """
-    	        <p>患者自身の予約を <code>condition</code>（<code>past / future</code>）や
+    	        <p>患者自身の予約を <code>condition</code>（<code>past / future / cancel </code>）や
     	        医師名（部分一致）で絞り込みます。<br>
     	        いずれも <code>null</code> または空文字を渡すとその条件は無視されます。</p>
     	        <ul>
@@ -418,7 +427,7 @@ public class PatientController {
     	    parameters  = {
     	        @Parameter(
     	            name        = "condition",
-    	            description = "\"past\" / \"future\" / \"null\"",
+    	            description = "\"past\" / \"future\" / \"cancel\" / \"null\"",
     	            example     = "future",
     	            in          = ParameterIn.PATH,
     	            schema      = @Schema(type = "string")
@@ -523,10 +532,14 @@ public class PatientController {
         log.debug("患者予約フィルタ: condition={}, name={}", condition, name);
         
         
-        ResponseEntity<Map<String, String>> auth = commonService.validateToken(token, "patient");
+    	Optional<String> hasError = commonService.validateToken(token, "patient");  
+
+        System.out.println("ポイント1");
         
-        if (auth.getBody() != null && !auth.getBody().isEmpty()) {
-            return auth;
+        if (hasError.isPresent()) {
+            // 認証エラーをそのまま返す
+        	return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("error", hasError.get()));
         }
         
         return commonService.filterPatient(condition, name, token);
